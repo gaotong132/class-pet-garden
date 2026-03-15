@@ -897,7 +897,7 @@ onMounted(() => {
 
     <!-- Add/Sub Points Modal -->
     <div v-if="showAddModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-xl p-6 w-[500px] max-h-[80vh] overflow-auto">
+      <div class="bg-white rounded-xl p-6 w-[700px] max-h-[80vh] overflow-auto">
         <h3 class="text-lg font-bold mb-4">
           <template v-if="selectedStudent">
             为 <span class="text-primary">{{ selectedStudent?.name }}</span> 评价
@@ -921,7 +921,7 @@ onMounted(() => {
         </div>
         
         <!-- Rules Grid -->
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-4 gap-2">
           <button 
             v-for="rule in currentCategoryRules" 
             :key="rule.id"
