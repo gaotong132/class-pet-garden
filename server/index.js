@@ -98,8 +98,8 @@ db.exec(`
 `)
 
 // Initialize default rules if not exists
-const rulesCount = db.prepare('SELECT COUNT(*) as count FROM evaluation_rules').get() as { count: number }
-if (rulesCount.count === 0) {
+const rulesCount = db.prepare('SELECT COUNT(*) as count FROM evaluation_rules').get()
+if (rulesCount && rulesCount.count === 0) {
   const defaultRules = [
     // 学习加分
     { id: uuidv4(), name: '作业完成优秀', points: 1, category: '学习' },
@@ -136,7 +136,7 @@ if (rulesCount.count === 0) {
 }
 
 // Initialize level config
-const levelConfig = db.prepare("SELECT value FROM settings WHERE key = 'levelConfig'").get() as { value: string } | undefined
+const levelConfig = db.prepare("SELECT value FROM settings WHERE key = 'levelConfig'").get()
 if (!levelConfig) {
   db.prepare("INSERT INTO settings (key, value) VALUES ('levelConfig', ?)").run(JSON.stringify([40, 60, 80, 100, 120, 140, 160]))
 }
@@ -233,7 +233,7 @@ app.post('/api/evaluations', (req, res) => {
 app.get('/api/evaluations', (req, res) => {
   const { classId, limit = 50 } = req.query
   let query = 'SELECT er.*, s.name as student_name FROM evaluation_records er JOIN students s ON er.student_id = s.id'
-  const params: any[] = []
+  const params = []
   
   if (classId) {
     query += ' WHERE er.class_id = ?'
@@ -274,8 +274,8 @@ app.get('/api/classes/:classId/ranking', (req, res) => {
 
 // Settings
 app.get('/api/settings', (req, res) => {
-  const settings = db.prepare('SELECT * FROM settings').all() as { key: string, value: string }[]
-  const result: Record<string, any> = {}
+  const settings = db.prepare('SELECT * FROM settings').all()
+  const result = {}
   for (const s of settings) {
     result[s.key] = JSON.parse(s.value)
   }
