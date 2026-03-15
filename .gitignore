@@ -21,4 +21,5 @@ Thumbs.db
 
 # Environment
 .env
-.env.localopencode.json
+.env.local
+opencode.json
