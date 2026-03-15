@@ -97,7 +97,13 @@ async function loadClasses() {
     const res = await api.get('/classes')
     classes.value = res.data.classes
     if (classes.value.length > 0) {
-      if (!currentClass.value || !classes.value.find(c => c.id === currentClass.value?.id)) {
+      // 尝试从localStorage恢复上次选择的班级
+      const savedClassId = localStorage.getItem('pet-garden-current-class')
+      const savedClass = savedClassId ? classes.value.find(c => c.id === savedClassId) : null
+      
+      if (savedClass) {
+        await selectClass(savedClass)
+      } else if (!currentClass.value || !classes.value.find(c => c.id === currentClass.value?.id)) {
         await selectClass(classes.value[0])
       }
     } else {
@@ -111,6 +117,8 @@ async function loadClasses() {
 
 async function selectClass(cls: Class) {
   currentClass.value = cls
+  // 保存到localStorage
+  localStorage.setItem('pet-garden-current-class', cls.id)
   await loadStudents()
 }
 
@@ -458,99 +466,91 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-100 flex">
-    <!-- Sidebar -->
-    <aside class="w-56 bg-white shadow-lg flex flex-col">
-      <div class="p-4 border-b bg-primary text-white">
-        <h1 class="text-lg font-bold">🐾 班级宠物园</h1>
+  <div class="min-h-screen bg-gray-100 flex flex-col">
+    <!-- Top Navigation -->
+    <header class="bg-white shadow-sm">
+      <div class="px-4 py-3 flex items-center justify-between border-b">
+        <h1 class="text-xl font-bold text-primary">🐾 班级宠物园</h1>
+        <div class="flex items-center gap-4">
+          <!-- Class Selector -->
+          <select 
+            v-if="classes.length > 0"
+            class="border rounded-lg px-3 py-1.5 text-sm"
+            :value="currentClass?.id"
+            @change="selectClass(classes.find(c => c.id === ($event.target as HTMLSelectElement).value)!)"
+          >
+            <option v-for="cls in classes" :key="cls.id" :value="cls.id">
+              {{ cls.name }}
+            </option>
+          </select>
+          <button 
+            @click="showClassModal = true"
+            class="bg-primary text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-500"
+          >
+            + 新班级
+          </button>
+        </div>
       </div>
       
-      <!-- Tools -->
-      <div class="flex-1 p-2 space-y-1">
-        <div class="px-3 py-2">
-          <input 
-            v-model="searchQuery"
-            type="text" 
-            placeholder="🔍 搜索学生"
-            class="w-full text-sm border rounded px-2 py-1"
-          />
-        </div>
-        
+      <!-- Toolbar -->
+      <div class="px-4 py-2 flex items-center gap-2 overflow-x-auto">
+        <input 
+          v-model="searchQuery"
+          type="text" 
+          placeholder="🔍 搜索学生"
+          class="border rounded-lg px-3 py-1.5 text-sm w-40"
+        />
         <button 
           @click="sortAsc = !sortAsc"
-          class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
+          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
         >
-          📝 姓名排序 {{ sortAsc ? '↑' : '↓' }}
+          📝 排序 {{ sortAsc ? '↑' : '↓' }}
         </button>
-        
+        <div class="w-px h-6 bg-gray-300"></div>
         <button 
           @click="showRankModal = true"
-          class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
+          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
         >
           🏆 排行榜
         </button>
-        
         <button 
           @click="loadEvaluationRecords(); showRecordsModal = true"
-          class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
+          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
         >
-          📋 评价记录
+          📋 记录
         </button>
-        
         <button 
           @click="undoLastEvaluation()"
-          class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm text-orange-600"
+          class="px-3 py-1.5 rounded-lg text-sm bg-orange-100 text-orange-600 hover:bg-orange-200"
         >
-          ↩️ 撤回评价
+          ↩️ 撤回
         </button>
-        
+        <div class="w-px h-6 bg-gray-300"></div>
         <button 
           @click="showRulesModal = true"
-          class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
+          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
         >
-          ⚙️ 管理规则
+          ⚙️ 规则
         </button>
-        
         <button 
           @click="exportBackup"
-          class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm"
+          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
         >
-          💾 导出备份
+          💾 备份
         </button>
-        
-        <label class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 text-sm cursor-pointer block">
-          📥 导入恢复
+        <label class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 cursor-pointer">
+          📥 恢复
           <input type="file" accept=".json" @change="importBackup" class="hidden" />
         </label>
       </div>
-      
-      <!-- Class Selector -->
-      <div class="p-2 border-t">
-        <select 
-          v-if="classes.length > 0"
-          class="w-full border rounded px-2 py-1 text-sm"
-          :value="currentClass?.id"
-          @change="selectClass(classes.find(c => c.id === ($event.target as HTMLSelectElement).value)!)"
-        >
-          <option v-for="cls in classes" :key="cls.id" :value="cls.id">
-            {{ cls.name }}
-          </option>
-        </select>
-        <button 
-          @click="showClassModal = true"
-          class="w-full mt-2 bg-primary text-white px-3 py-1.5 rounded text-sm hover:bg-orange-500"
-        >
-          + 新建班级
-        </button>
-      </div>
-    </aside>
+    </header>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col">
-      <!-- Header -->
-      <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header Actions -->
+      <div class="bg-white px-6 py-3 flex items-center justify-between border-b">
         <div>
-          <h2 class="text-xl font-bold">{{ currentClass?.name || '请选择班级' }}</h2>
+          <h2 class="text-lg font-bold">{{ currentClass?.name || '请选择班级' }}</h2>
           <p class="text-sm text-gray-500">{{ students.length }} 名学生</p>
         </div>
         <div class="flex gap-2">
@@ -588,7 +588,7 @@ onMounted(() => {
             >
               全选
             </button>
-            <span class="text-gray-600 px-4 py-2">
+            <span class="text-gray-600 px-4 py-2 flex items-center">
               已选 {{ selectedStudents.size }} 人
             </span>
           </template>
@@ -600,7 +600,7 @@ onMounted(() => {
             删除班级
           </button>
         </div>
-      </header>
+      </div>
 
       <!-- Students List -->
       <div class="flex-1 p-6 overflow-auto">
