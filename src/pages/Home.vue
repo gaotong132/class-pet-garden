@@ -63,6 +63,9 @@ const newRulePoints = ref(1)
 const newRuleCategory = ref('学习')
 const batchMode = ref(false)
 const selectedStudents = ref<Set<string>>(new Set())
+const showClassMenu = ref(false)
+const showStudentMenu = ref(false)
+const showEvalMenu = ref(false)
 
 // Computed
 const filteredStudents = computed(() => {
@@ -467,140 +470,102 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-gray-100 flex flex-col">
-    <!-- Top Navigation -->
-    <header class="bg-white shadow-sm">
-      <div class="px-4 py-3 flex items-center justify-between border-b">
-        <h1 class="text-xl font-bold text-primary">🐾 班级宠物园</h1>
-        <div class="flex items-center gap-4">
-          <!-- Class Selector -->
-          <select 
-            v-if="classes.length > 0"
-            class="border rounded-lg px-3 py-1.5 text-sm"
-            :value="currentClass?.id"
-            @change="selectClass(classes.find(c => c.id === ($event.target as HTMLSelectElement).value)!)"
-          >
-            <option v-for="cls in classes" :key="cls.id" :value="cls.id">
-              {{ cls.name }}
-            </option>
-          </select>
-          <button 
-            @click="showClassModal = true"
-            class="bg-primary text-white px-3 py-1.5 rounded-lg text-sm hover:bg-orange-500"
-          >
-            + 新班级
-          </button>
-        </div>
+    <!-- Top Navigation - 单行 -->
+    <header class="bg-white shadow-sm px-4 py-2 flex items-center justify-between">
+      <!-- Left -->
+      <div class="flex items-center gap-3">
+        <h1 class="text-lg font-bold text-primary">🐾 班级宠物园</h1>
+        <select 
+          v-if="classes.length > 0"
+          class="border rounded-lg px-3 py-1.5 text-sm"
+          :value="currentClass?.id"
+          @change="selectClass(classes.find(c => c.id === ($event.target as HTMLSelectElement).value)!)"
+        >
+          <option v-for="cls in classes" :key="cls.id" :value="cls.id">
+            {{ cls.name }}
+          </option>
+        </select>
+        <span class="text-sm text-gray-500">{{ students.length }} 人</span>
       </div>
       
-      <!-- Toolbar -->
-      <div class="px-4 py-2 flex items-center gap-2 overflow-x-auto">
+      <!-- Right -->
+      <div class="flex items-center gap-2">
+        <!-- Search -->
         <input 
           v-model="searchQuery"
           type="text" 
-          placeholder="🔍 搜索学生"
-          class="border rounded-lg px-3 py-1.5 text-sm w-40"
+          placeholder="🔍 搜索"
+          class="border rounded-lg px-3 py-1.5 text-sm w-32"
         />
-        <button 
-          @click="sortAsc = !sortAsc"
-          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
-        >
-          📝 排序 {{ sortAsc ? '↑' : '↓' }}
-        </button>
-        <div class="w-px h-6 bg-gray-300"></div>
+        
+        <!-- Quick Actions -->
         <button 
           @click="showRankModal = true"
           class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
         >
           🏆 排行榜
         </button>
+        
         <button 
-          @click="loadEvaluationRecords(); showRecordsModal = true"
-          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
+          v-if="currentClass && !batchMode"
+          @click="startBatchMode"
+          class="px-3 py-1.5 rounded-lg text-sm bg-purple-500 text-white hover:bg-purple-600"
         >
-          📋 记录
+          ✅ 批量评价
         </button>
-        <button 
-          @click="undoLastEvaluation()"
-          class="px-3 py-1.5 rounded-lg text-sm bg-orange-100 text-orange-600 hover:bg-orange-200"
-        >
-          ↩️ 撤回
-        </button>
-        <div class="w-px h-6 bg-gray-300"></div>
-        <button 
-          @click="showRulesModal = true"
-          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
-        >
-          ⚙️ 规则
-        </button>
-        <button 
-          @click="exportBackup"
-          class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200"
-        >
-          💾 备份
-        </button>
-        <label class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 cursor-pointer">
-          📥 恢复
-          <input type="file" accept=".json" @change="importBackup" class="hidden" />
-        </label>
+        
+        <template v-if="batchMode">
+          <span class="text-sm text-purple-600 font-medium">已选 {{ selectedStudents.size }} 人</span>
+          <button @click="selectAllStudents" class="px-3 py-1.5 rounded-lg text-sm bg-blue-500 text-white hover:bg-blue-600">全选</button>
+          <button @click="cancelBatchMode" class="px-3 py-1.5 rounded-lg text-sm bg-gray-500 text-white hover:bg-gray-600">取消</button>
+        </template>
+        
+        <!-- Class Menu -->
+        <div class="relative" v-if="!batchMode">
+          <button @click="showClassMenu = !showClassMenu" class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200">
+            📚 班级管理 ▾
+          </button>
+          <div v-if="showClassMenu" class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border py-1 w-40 z-50">
+            <button @click="showClassModal = true; showClassMenu = false" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">➕ 新建班级</button>
+            <button v-if="currentClass" @click="deleteClass(currentClass.id); showClassMenu = false" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">🗑️ 删除班级</button>
+            <hr class="my-1">
+            <button @click="exportBackup(); showClassMenu = false" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">💾 导出备份</button>
+            <label class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer block">
+              📥 导入恢复
+              <input type="file" accept=".json" @change="importBackup" class="hidden" />
+            </label>
+          </div>
+        </div>
+        
+        <!-- Student Menu -->
+        <div class="relative" v-if="currentClass && !batchMode">
+          <button @click="showStudentMenu = !showStudentMenu" class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200">
+            👨‍🎓 学生管理 ▾
+          </button>
+          <div v-if="showStudentMenu" class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border py-1 w-40 z-50">
+            <button @click="showStudentModal = true; showStudentMenu = false" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">➕ 添加学生</button>
+            <button @click="openImportModal(); showStudentMenu = false" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">📥 批量导入</button>
+          </div>
+        </div>
+        
+        <!-- Eval Menu -->
+        <div class="relative" v-if="!batchMode">
+          <button @click="showEvalMenu = !showEvalMenu" class="px-3 py-1.5 rounded-lg text-sm bg-gray-100 hover:bg-gray-200">
+            ⭐ 评价管理 ▾
+          </button>
+          <div v-if="showEvalMenu" class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border py-1 w-40 z-50">
+            <button @click="showRankModal = true; showEvalMenu = false" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">🏆 排行榜</button>
+            <button @click="loadEvaluationRecords(); showRecordsModal = true; showEvalMenu = false" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">📋 评价记录</button>
+            <button @click="undoLastEvaluation(); showEvalMenu = false" class="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-gray-100">↩️ 撤回评价</button>
+            <hr class="my-1">
+            <button @click="showRulesModal = true; showEvalMenu = false" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">⚙️ 管理规则</button>
+          </div>
+        </div>
       </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 flex flex-col overflow-hidden">
-      <!-- Header Actions -->
-      <div class="bg-white px-6 py-3 flex items-center justify-between border-b">
-        <div>
-          <h2 class="text-lg font-bold">{{ currentClass?.name || '请选择班级' }}</h2>
-          <p class="text-sm text-gray-500">{{ students.length }} 名学生</p>
-        </div>
-        <div class="flex gap-2">
-          <button 
-            v-if="currentClass && !batchMode"
-            @click="showStudentModal = true"
-            class="bg-secondary text-white px-4 py-2 rounded-lg text-sm hover:bg-green-500"
-          >
-            + 添加学生
-          </button>
-          <button 
-            v-if="currentClass && !batchMode"
-            @click="openImportModal"
-            class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600"
-          >
-            📥 批量导入
-          </button>
-          <button 
-            v-if="currentClass && !batchMode"
-            @click="startBatchMode"
-            class="bg-purple-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-600"
-          >
-            ✅ 批量评价
-          </button>
-          <template v-if="batchMode">
-            <button 
-              @click="cancelBatchMode"
-              class="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-600"
-            >
-              取消
-            </button>
-            <button 
-              @click="selectAllStudents"
-              class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600"
-            >
-              全选
-            </button>
-            <span class="text-gray-600 px-4 py-2 flex items-center">
-              已选 {{ selectedStudents.size }} 人
-            </span>
-          </template>
-          <button 
-            v-if="currentClass && !batchMode"
-            @click="deleteClass(currentClass.id)"
-            class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
-          >
-            删除班级
-          </button>
-        </div>
-      </div>
+    <main class="flex-1 overflow-auto p-6">
 
       <!-- Students List -->
       <div class="flex-1 p-6 overflow-auto">
@@ -680,7 +645,7 @@ onMounted(() => {
         </div>
         
         <!-- Batch Action Bar -->
-        <div v-if="batchMode && selectedStudents.size > 0" class="fixed bottom-0 left-56 right-0 bg-white border-t shadow-lg p-4 flex justify-center gap-4">
+        <div v-if="batchMode && selectedStudents.size > 0" class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 flex justify-center gap-4 z-40">
           <button 
             @click="batchAddPoints"
             class="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 transition"
