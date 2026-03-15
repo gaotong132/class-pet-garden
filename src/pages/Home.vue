@@ -70,6 +70,7 @@ const showDeleteStudentMode = ref(false)
 const deleteStudentList = ref<string[]>([])
 const recordsPage = ref(1)
 const recordsPageSize = 20
+const totalRecords = ref(0)
 
 // Computed
 const filteredStudents = computed(() => {
@@ -287,6 +288,39 @@ function toggleStudentSelect(studentId: string) {
     newSet.add(studentId)
   }
   selectedStudents.value = newSet
+}
+
+function toggleDeleteStudent(studentId: string) {
+  const index = deleteStudentList.value.indexOf(studentId)
+  if (index > -1) {
+    deleteStudentList.value.splice(index, 1)
+  } else {
+    deleteStudentList.value.push(studentId)
+  }
+}
+
+function cancelDeleteMode() {
+  showDeleteStudentMode.value = false
+  deleteStudentList.value = []
+}
+
+async function batchDeleteStudents() {
+  if (deleteStudentList.value.length === 0) return
+  if (!confirm(`确定删除 ${deleteStudentList.value.length} 名学生？此操作不可恢复！`)) return
+  
+  let successCount = 0
+  for (const studentId of deleteStudentList.value) {
+    try {
+      await api.delete(`/students/${studentId}`)
+      successCount++
+    } catch (error) {
+      console.error('删除失败:', error)
+    }
+  }
+  
+  alert(`已删除 ${successCount} 名学生`)
+  cancelDeleteMode()
+  await loadStudents()
 }
 
 function selectAllStudents() {
@@ -598,8 +632,15 @@ onMounted(() => {
             v-for="student in filteredStudents" 
             :key="student.id"
             class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition cursor-pointer relative"
-            :class="{ 'ring-2 ring-purple-500': batchMode && selectedStudents.has(student.id) }"
-            @click="batchMode ? toggleStudentSelect(student.id) : openAddModal(student)"
+            :class="{ 
+              'ring-2 ring-purple-500': batchMode && selectedStudents.has(student.id),
+              'ring-2 ring-red-500': showDeleteStudentMode && deleteStudentList.includes(student.id)
+            }"
+            @click="
+              batchMode ? toggleStudentSelect(student.id) : 
+              showDeleteStudentMode ? toggleDeleteStudent(student.id) : 
+              openAddModal(student)
+            "
           >
             <!-- Checkbox for batch mode -->
             <div 
@@ -610,8 +651,17 @@ onMounted(() => {
               <span v-if="selectedStudents.has(student.id)" class="text-white text-sm">✓</span>
             </div>
             
-            <!-- Pet Image -->
-            <div class="aspect-square bg-orange-50 flex items-center justify-center overflow-hidden relative">
+            <!-- Checkbox for delete mode -->
+            <div 
+              v-if="showDeleteStudentMode"
+              class="absolute top-2 left-2 w-6 h-6 rounded border-2 flex items-center justify-center z-10"
+              :class="deleteStudentList.includes(student.id) ? 'bg-red-500 border-red-500' : 'bg-white border-gray-300'"
+            >
+              <span v-if="deleteStudentList.includes(student.id)" class="text-white text-sm">✓</span>
+            </div>
+            
+            <!-- Pet Image Area -->
+            <div class="aspect-square bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden relative">
               <img 
                 v-if="student.pet_type" 
                 :src="getStudentPetImage(student)" 
@@ -629,20 +679,31 @@ onMounted(() => {
               </button>
               
               <!-- Level Badge -->
-              <div class="absolute top-2 right-2 bg-purple-500 text-white text-sm font-bold px-2.5 py-0.5 rounded-full shadow">
+              <div class="absolute bottom-2 right-2 bg-purple-500 text-white text-sm font-bold px-2.5 py-0.5 rounded-full shadow">
                 Lv.{{ student.pet_level }}
               </div>
             </div>
             
-            <!-- Info -->
+            <!-- Info Area -->
             <div class="p-3">
+              <!-- Student Name + Pet Name -->
               <div class="flex items-center justify-between mb-1">
-                <span class="font-bold text-lg text-gray-800">{{ student.name }}</span>
-                <span class="text-base font-bold text-primary">⭐ {{ student.total_points }}</span>
+                <span class="font-bold text-base text-gray-800">{{ student.name }}</span>
+                <span class="text-xs text-gray-500">{{ student.pet_type ? getPetType(student.pet_type)?.name : '未领养' }}</span>
               </div>
-              <div class="bg-gray-200 rounded-full h-1.5">
+              
+              <!-- Growth + Points -->
+              <div class="flex items-center justify-between text-sm mb-1.5">
+                <span class="text-gray-600">
+                  成长值 <span class="font-medium text-purple-600">{{ getLevelProgress(student.pet_exp).current }}/{{ getLevelProgress(student.pet_exp).required }}</span>
+                </span>
+                <span class="font-bold text-primary">⭐ {{ student.total_points }}</span>
+              </div>
+              
+              <!-- Progress Bar -->
+              <div class="bg-gray-200 rounded-full h-2">
                 <div 
-                  class="bg-purple-500 rounded-full h-1.5 transition-all"
+                  class="bg-gradient-to-r from-purple-400 to-purple-500 rounded-full h-2 transition-all"
                   :style="{ width: `${getLevelProgress(student.pet_exp).percentage}%` }"
                 ></div>
               </div>
@@ -664,11 +725,23 @@ onMounted(() => {
           >
             ⬇️ 统一扣分
           </button>
+        </div>
+        
+        <!-- Delete Student Action Bar -->
+        <div v-if="showDeleteStudentMode" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t shadow-2xl p-4 flex justify-center gap-4 z-40">
+          <span class="text-gray-600 py-3">已选 {{ deleteStudentList.length }} 人</span>
           <button 
             @click="batchDeleteStudents"
-            class="bg-gray-100 text-gray-700 px-8 py-3 rounded-xl font-bold hover:bg-gray-200 transition shadow-lg"
+            :disabled="deleteStudentList.length === 0"
+            class="bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-3 rounded-xl font-bold hover:from-red-600 hover:to-red-700 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            🗑️ 删除选中
+            🗑️ 确认删除
+          </button>
+          <button 
+            @click="cancelDeleteMode"
+            class="bg-gray-200 text-gray-700 px-8 py-3 rounded-xl font-bold hover:bg-gray-300 transition shadow-lg"
+          >
+            取消
           </button>
         </div>
       </div>

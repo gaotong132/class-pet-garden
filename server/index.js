@@ -192,6 +192,9 @@ app.put('/api/students/:id', (req, res) => {
 })
 
 app.delete('/api/students/:id', (req, res) => {
+  // 先删除相关的评价记录
+  db.prepare('DELETE FROM evaluation_records WHERE student_id = ?').run(req.params.id)
+  // 再删除学生
   db.prepare('DELETE FROM students WHERE id = ?').run(req.params.id)
   res.json({ success: true })
 })
