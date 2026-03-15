@@ -367,57 +367,58 @@ onMounted(() => {
           <p class="text-gray-500">点击右上角添加学生</p>
         </div>
 
-        <div v-else class="space-y-3">
+        <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <div 
             v-for="student in filteredStudents" 
             :key="student.id"
-            class="bg-white rounded-xl shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition"
+            class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition"
           >
-            <!-- Pet Avatar -->
+            <!-- Pet Image -->
             <div 
-              class="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer"
+              class="aspect-square bg-orange-50 flex items-center justify-center overflow-hidden cursor-pointer relative"
               @click="openPetSelect(student)"
             >
               <img 
                 v-if="student.pet_type" 
                 :src="getStudentPetImage(student)" 
-                class="w-12 h-12 object-contain"
+                class="w-full h-full object-cover"
               />
-              <span v-else class="text-2xl">❓</span>
+              <span v-else class="text-6xl">❓</span>
+              
+              <!-- Points Badge -->
+              <div class="absolute top-2 right-2 bg-primary text-white text-sm font-bold px-2 py-0.5 rounded-full">
+                +{{ student.total_points }}
+              </div>
             </div>
             
             <!-- Info -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
+            <div class="p-3">
+              <div class="flex items-center justify-between mb-1">
                 <span class="font-bold text-gray-800">{{ student.name }}</span>
-                <span v-if="student.student_no" class="text-xs text-gray-400">({{ student.student_no }})</span>
-              </div>
-              <div class="flex items-center gap-3 mt-1">
                 <span class="text-sm text-gray-500">Lv.{{ student.pet_level }}</span>
-                <div class="flex-1 bg-gray-200 rounded-full h-2 max-w-[100px]">
-                  <div 
-                    class="bg-primary rounded-full h-2 transition-all"
-                    :style="{ width: `${Math.min(100, (getLevelProgress(student.pet_exp).current / getLevelProgress(student.pet_exp).required) * 100)}%` }"
-                  ></div>
-                </div>
-                <span class="text-sm font-bold text-primary">+{{ student.total_points }}</span>
               </div>
-            </div>
-            
-            <!-- Actions -->
-            <div class="flex gap-2 flex-shrink-0">
-              <button 
-                @click="openAddModal(student)"
-                class="w-10 h-10 bg-green-500 text-white rounded-full text-xl font-bold hover:bg-green-600 shadow"
-              >
-                +
-              </button>
-              <button 
-                @click="openSubModal(student)"
-                class="w-10 h-10 bg-red-500 text-white rounded-full text-xl font-bold hover:bg-red-600 shadow"
-              >
-                -
-              </button>
+              <div class="bg-gray-200 rounded-full h-1.5 mb-3">
+                <div 
+                  class="bg-primary rounded-full h-1.5 transition-all"
+                  :style="{ width: `${Math.min(100, (getLevelProgress(student.pet_exp).current / getLevelProgress(student.pet_exp).required) * 100)}%` }"
+                ></div>
+              </div>
+              
+              <!-- Actions -->
+              <div class="flex gap-2">
+                <button 
+                  @click="openAddModal(student)"
+                  class="flex-1 bg-green-500 text-white py-2 rounded-lg text-lg font-bold hover:bg-green-600 transition"
+                >
+                  +
+                </button>
+                <button 
+                  @click="openSubModal(student)"
+                  class="flex-1 bg-red-500 text-white py-2 rounded-lg text-lg font-bold hover:bg-red-600 transition"
+                >
+                  -
+                </button>
+              </div>
             </div>
           </div>
         </div>
