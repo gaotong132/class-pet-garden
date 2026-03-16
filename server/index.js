@@ -11,6 +11,24 @@ const __dirname = dirname(__filename)
 const app = express()
 const PORT = 3002
 
+// 等级配置 (每级所需经验)
+const LEVEL_CONFIG = [40, 60, 80, 100, 120, 140, 160]
+
+// 计算等级
+function calculateLevel(exp) {
+  let level = 1
+  let total = 0
+  for (const required of LEVEL_CONFIG) {
+    total += required
+    if (exp >= total) {
+      level++
+    } else {
+      break
+    }
+  }
+  return Math.min(level, 8)
+}
+
 // Middleware
 app.use(cors())
 app.use(express.json())
@@ -317,10 +335,10 @@ app.put('/api/students/:id/pet', (req, res) => {
     db.prepare('INSERT INTO badges (id, student_id, pet_type, earned_at) VALUES (?, ?, ?, ?)').run(badgeId, req.params.id, student.pet_type, now)
   }
   
-  // Update pet
-  db.prepare('UPDATE students SET pet_type = ?, pet_level = 1, pet_exp = 0 WHERE id = ?').run(petType, req.params.id)
+  // Update pet - 只更新宠物类型，保留成长进度（pet_level 和 pet_exp）
+  db.prepare('UPDATE students SET pet_type = ? WHERE id = ?').run(petType, req.params.id)
   
-  res.json({ success: true, petType, petLevel: 1, petExp: 0 })
+  res.json({ success: true, petType, petLevel: student.pet_level, petExp: student.pet_exp })
 })
 
 // Evaluation Rules
@@ -358,25 +376,12 @@ app.post('/api/evaluations', (req, res) => {
   const student = db.prepare('SELECT * FROM students WHERE id = ?').get(studentId)
   
   // Update pet exp if student has a pet
-  // pet_exp should always equal total_points (with minimum 0)
   if (student && student.pet_type) {
-    const newExp = Math.max(0, student.total_points)  // Sync with total_points
-    let newLevel = student.pet_level
+    // pet_exp should always equal total_points (with minimum 0)
+    const newExp = Math.max(0, student.total_points)
     
-    // Level up logic (only for positive exp)
-    if (newExp > 0) {
-      const levelConfig = [40, 60, 80, 100, 120, 140, 160]
-      let totalRequired = 0
-      for (let i = 0; i < levelConfig.length; i++) {
-        totalRequired += levelConfig[i]
-        if (newExp >= totalRequired) {
-          newLevel = i + 2
-        }
-      }
-      newLevel = Math.min(newLevel, 8)
-    } else {
-      newLevel = 1  // Reset to level 1 if exp is 0
-    }
+    // Calculate new level based on exp (using the same function as withdrawal)
+    const newLevel = calculateLevel(newExp)
     
     // Check if pet graduated (reached level 8)
     let graduated = false
@@ -394,6 +399,7 @@ app.post('/api/evaluations', (req, res) => {
       petLevel: newLevel, 
       petExp: newExp,
       levelUp: newLevel > student.pet_level,
+      levelDown: newLevel < student.pet_level,
       graduated
     })
   }
@@ -414,8 +420,18 @@ app.delete('/api/evaluations/latest', (req, res) => {
     return res.status(404).json({ error: 'No record found' })
   }
   
-  // Undo points
-  db.prepare('UPDATE students SET total_points = total_points - ? WHERE id = ?').run(record.points, record.student_id)
+  // Get student current data
+  const student = db.prepare('SELECT * FROM students WHERE id = ?').get(record.student_id)
+  
+  // Calculate new exp (exp is always positive based on absolute points)
+  const expChange = Math.abs(record.points)
+  const newExp = Math.max(0, student.pet_exp - expChange)
+  
+  // Recalculate level based on new exp
+  const newLevel = calculateLevel(newExp)
+  
+  // Undo points, exp and update level
+  db.prepare('UPDATE students SET total_points = total_points - ?, pet_exp = ?, pet_level = ? WHERE id = ?').run(record.points, newExp, newLevel, record.student_id)
   
   // Delete record
   db.prepare('DELETE FROM evaluation_records WHERE id = ?').run(record.id)
@@ -423,8 +439,37 @@ app.delete('/api/evaluations/latest', (req, res) => {
   res.json({ success: true, undone: record })
 })
 
+// 删除指定评价记录
+app.delete('/api/evaluations/:id', (req, res) => {
+  const { id } = req.params
+  
+  // Get record
+  const record = db.prepare('SELECT * FROM evaluation_records WHERE id = ?').get(id)
+  if (!record) {
+    return res.status(404).json({ error: 'Record not found' })
+  }
+  
+  // Get student current data
+  const student = db.prepare('SELECT * FROM students WHERE id = ?').get(record.student_id)
+  
+  // Calculate new exp (exp is always positive based on absolute points)
+  const expChange = Math.abs(record.points)
+  const newExp = Math.max(0, student.pet_exp - expChange)
+  
+  // Recalculate level based on new exp
+  const newLevel = calculateLevel(newExp)
+  
+  // Undo points, exp and update level
+  db.prepare('UPDATE students SET total_points = total_points - ?, pet_exp = ?, pet_level = ? WHERE id = ?').run(record.points, newExp, newLevel, record.student_id)
+  
+  // Delete record
+  db.prepare('DELETE FROM evaluation_records WHERE id = ?').run(id)
+  
+  res.json({ success: true, undone: record })
+})
+
 app.get('/api/evaluations', (req, res) => {
-  const { classId, page = 1, pageSize = 20 } = req.query
+  const { classId, studentId, page = 1, pageSize = 20 } = req.query
   const offset = (Number(page) - 1) * Number(pageSize)
   
   let countQuery = 'SELECT COUNT(*) as total FROM evaluation_records er'
@@ -432,11 +477,22 @@ app.get('/api/evaluations', (req, res) => {
   const params = []
   const countParams = []
   
+  // 支持按班级或学生筛选
+  const conditions = []
   if (classId) {
-    query += ' WHERE er.class_id = ?'
-    countQuery += ' WHERE class_id = ?'
+    conditions.push('er.class_id = ?')
     params.push(classId)
     countParams.push(classId)
+  }
+  if (studentId) {
+    conditions.push('er.student_id = ?')
+    params.push(studentId)
+    countParams.push(studentId)
+  }
+  
+  if (conditions.length > 0) {
+    query += ' WHERE ' + conditions.join(' AND ')
+    countQuery += ' WHERE ' + conditions.join(' AND ')
   }
   
   // Get total count
