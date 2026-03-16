@@ -76,7 +76,8 @@ const showSortMenu = ref(false)
 
 // 动画状态
 const showLevelUpAnimation = ref(false)
-const levelUpInfo = ref({ name: '', level: 0 })
+const levelUpInfo = ref({ name: '', level: 0, petType: '', prevLevel: 0 })
+const levelUpImagesLoaded = ref({ prev: false, current: false })
 const isLoaded = ref(false)
 const isLoading = ref(true)
 
@@ -476,11 +477,17 @@ async function detailQuickAdd(rule: Rule) {
     triggerScoreAnimation(student.id, rule.points)
     
     if (res.data.levelUp) {
-      levelUpInfo.value = { name: student.name, level: res.data.petLevel }
+      levelUpInfo.value = { 
+        name: student.name, 
+        level: res.data.petLevel,
+        petType: student.pet_type || '',
+        prevLevel: res.data.petLevel - 1
+      }
+      levelUpImagesLoaded.value = { prev: false, current: false }
       showLevelUpAnimation.value = true
       setTimeout(() => {
         showLevelUpAnimation.value = false
-      }, 3000)
+      }, 4000)
     }
     if (res.data.graduated) {
       alert(`🎓 恭喜！${student.name} 的宠物毕业了，获得了专属徽章！`)
@@ -538,11 +545,17 @@ async function quickAdd(student: Student | null, rule: Rule) {
     triggerScoreAnimation(student.id, rule.points)
     
     if (res.data.levelUp) {
-      levelUpInfo.value = { name: student.name, level: res.data.petLevel }
+      levelUpInfo.value = { 
+        name: student.name, 
+        level: res.data.petLevel,
+        petType: student.pet_type || '',
+        prevLevel: res.data.petLevel - 1
+      }
+      levelUpImagesLoaded.value = { prev: false, current: false }
       showLevelUpAnimation.value = true
       setTimeout(() => {
         showLevelUpAnimation.value = false
-      }, 3000)
+      }, 4000)
     }
     if (res.data.graduated) {
       alert(`🎓 恭喜！${student.name} 的宠物毕业了，获得了专属徽章！`)
@@ -729,45 +742,75 @@ onMounted(async () => {
     
     <!-- 升级动画 -->
     <Transition name="fade">
-      <div v-if="showLevelUpAnimation" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200]">
+      <div v-if="showLevelUpAnimation" class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[200]">
         <div class="relative">
           <!-- 背景光晕 -->
-          <div class="absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 rounded-full blur-3xl opacity-50 animate-pulse"></div>
+          <div class="absolute inset-0 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 rounded-full blur-3xl opacity-60 animate-pulse"></div>
           
           <!-- 主内容 -->
-          <div class="relative bg-white/95 backdrop-blur-xl rounded-3xl p-12 text-center shadow-2xl border-4"
+          <div class="relative bg-white/95 backdrop-blur-xl rounded-3xl p-10 text-center shadow-2xl border-4 max-w-md"
             :class="levelUpInfo.level >= 8 ? 'border-yellow-400 shadow-yellow-400/50' : levelUpInfo.level >= 5 ? 'border-purple-400 shadow-purple-400/50' : 'border-orange-400 shadow-orange-400/50'"
           >
-            <!-- 等级图标 -->
-            <div class="text-8xl mb-6 animate-bounce">
-              <span v-if="levelUpInfo.level >= 10">👑</span>
-              <span v-else-if="levelUpInfo.level >= 8">🌟</span>
-              <span v-else-if="levelUpInfo.level >= 5">⭐</span>
-              <span v-else>🎉</span>
-            </div>
-            
             <!-- 标题 -->
-            <h2 class="text-4xl font-bold mb-4"
+            <h2 class="text-3xl font-bold mb-2"
               :class="levelUpInfo.level >= 8 ? 'text-gradient bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 bg-clip-text text-transparent' : 'text-gradient'"
             >
               {{ levelUpInfo.level >= 8 ? '恭喜毕业！' : '升级啦！' }}
             </h2>
             
-            <!-- 信息 -->
-            <p class="text-xl text-gray-600 mb-2">
-              <span class="font-bold text-purple-500 text-2xl">{{ levelUpInfo.name }}</span> 的宠物
-            </p>
-            <div class="flex items-center justify-center gap-2 mb-4">
-              <span class="text-gray-400">升级到</span>
-              <span class="text-5xl font-bold"
-                :class="levelUpInfo.level >= 10 ? 'text-yellow-500' : levelUpInfo.level >= 8 ? 'text-pink-500' : levelUpInfo.level >= 5 ? 'text-purple-500' : 'text-orange-500'"
-              >
-                Lv.{{ levelUpInfo.level }}
-              </span>
+            <!-- 宠物进化动画区域 -->
+            <div class="relative w-48 h-48 mx-auto my-6">
+              <!-- 进化光环 -->
+              <div class="absolute inset-0 rounded-full bg-gradient-to-r from-orange-300 via-pink-300 to-purple-300 opacity-50 animate-spin" style="animation-duration: 3s"></div>
+              <div class="absolute inset-2 rounded-full bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-300 opacity-40 animate-spin" style="animation-duration: 2s; animation-direction: reverse"></div>
+              
+              <!-- 加载动画 -->
+              <div v-if="!levelUpImagesLoaded.prev || !levelUpImagesLoaded.current" class="absolute inset-0 flex items-center justify-center">
+                <div class="text-4xl animate-bounce">✨</div>
+              </div>
+              
+              <!-- 宠物图片容器 -->
+              <div v-else class="absolute inset-4 rounded-full overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 shadow-inner">
+                <!-- 升级前图片 - 淡出 -->
+                <img 
+                  :src="getPetLevelImage(levelUpInfo.petType, levelUpInfo.prevLevel)" 
+                  class="absolute inset-0 w-full h-full object-contain p-2 transition-all duration-1000"
+                  :class="levelUpImagesLoaded.prev ? 'opacity-0 scale-50' : 'opacity-100 scale-100'"
+                />
+                <!-- 升级后图片 - 淡入 -->
+                <img 
+                  :src="getPetLevelImage(levelUpInfo.petType, levelUpInfo.level)" 
+                  class="absolute inset-0 w-full h-full object-contain p-2 transition-all duration-1000"
+                  :class="levelUpImagesLoaded.current ? 'opacity-100 scale-100' : 'opacity-0 scale-150'"
+                  @load="levelUpImagesLoaded.current = true"
+                />
+                <!-- 预加载前一张图片 -->
+                <img 
+                  :src="getPetLevelImage(levelUpInfo.petType, levelUpInfo.prevLevel)" 
+                  class="hidden"
+                  @load="levelUpImagesLoaded.prev = true"
+                />
+              </div>
+              
+              <!-- 等级变化指示 -->
+              <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white rounded-full px-4 py-1 shadow-lg">
+                <span class="text-sm text-gray-400">Lv.{{ levelUpInfo.prevLevel }}</span>
+                <span class="text-lg">➜</span>
+                <span class="text-xl font-bold"
+                  :class="levelUpInfo.level >= 8 ? 'text-yellow-500' : levelUpInfo.level >= 5 ? 'text-purple-500' : 'text-orange-500'"
+                >
+                  Lv.{{ levelUpInfo.level }}
+                </span>
+              </div>
             </div>
             
+            <!-- 信息 -->
+            <p class="text-lg text-gray-600 mb-1">
+              <span class="font-bold text-purple-500">{{ levelUpInfo.name }}</span> 的宠物
+            </p>
+            
             <!-- 等级称号 -->
-            <div class="text-lg text-gray-500">
+            <div class="text-base">
               <span v-if="levelUpInfo.level >= 10" class="text-yellow-500 font-bold">🏆 传说级宠物</span>
               <span v-else-if="levelUpInfo.level >= 8" class="text-pink-500 font-bold">🌟 史诗级宠物</span>
               <span v-else-if="levelUpInfo.level >= 5" class="text-purple-500 font-bold">⭐ 稀有宠物</span>
