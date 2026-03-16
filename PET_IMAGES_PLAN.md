@@ -2,241 +2,229 @@
 
 > 目标：为25种宠物 × 8个等级生成统一风格的图片
 > 技术：SiliconFlow FLUX.1-dev
-> 成本：约¥0.03/张
+> 核心：每种宠物独立设计装饰，严格统一画风
 
 ---
 
 ## 一、设计理念
 
 ### 核心原则
-- **装饰变化替代体型变化**：AI难以精确控制体型，用装饰升级体现等级
-- **风格严格统一**：所有宠物、所有等级保持相同画风
-- **可爱优先**：符合小学生审美，色彩明亮、表情友好
+- **一宠一设计**：每种宠物独立设计装饰，符合宠物特性
+- **严格画风统一**：所有图片使用完全相同的风格描述词
+- **装饰升级体现成长**：从简单到华丽，体现等级提升
 
-### 视觉规范
-| 元素 | 规范 |
+### 画风规范（严格统一，不可更改）
+```
+STYLE = "flat cartoon illustration, kawaii chibi style, consistent character design,
+cute friendly expression, big round sparkling eyes with white highlights,
+soft rounded shapes, smooth clean outlines, no sharp edges,
+bright saturated warm colors, soft shading, 2D vector art style,
+children book illustration style, standing pose, front facing,
+white background, masterpiece, best quality"
+
+NEGATIVE = "3D, realistic, photograph, scary, dark, complex background,
+busy background, text, watermark, signature, blurry, low quality,
+different style, inconsistent design"
+```
+
+**关键：**
+- 使用 `flat cartoon illustration` 确保扁平风格
+- 使用 `consistent character design` 确保一致性
+- 使用 `white background` 或简单背景，避免背景干扰
+- 使用 `2D vector art style` 确保矢量感
+
+---
+
+## 二、宠物装饰设计
+
+### 设计原则
+1. **符合宠物特性**：猫用猫相关装饰，狗用狗相关装饰
+2. **等级递进清晰**：Lv.1简单 → Lv.8华丽神圣
+3. **装饰可见性**：一眼可见，不模糊
+4. **风格统一性**：所有宠物使用相同画风描述
+
+### 示例：小猫装饰设计
+
+| 等级 | 装饰主题 | 具体元素 | 设计理念 |
+|------|---------|---------|---------|
+| Lv.1 | 婴儿期 | 粉色小蝴蝶结 | 最简装饰，突出可爱 |
+| Lv.2 | 幼年期 | 铃铛项圈+毛线球 | 猫喜欢玩毛线 |
+| Lv.3 | 成长期 | 星星猫耳发饰 | 猫耳元素+星星 |
+| Lv.4 | 少年期 | 小鱼骨项链 | 猫爱吃鱼，鱼骨元素 |
+| Lv.5 | 青年期 | 小皇冠+猫爪印记 | 开始展现王者气质 |
+| Lv.6 | 成熟期 | 华丽皇冠+猫耳+小翅膀 | 猫耳+翅膀，飞行能力 |
+| Lv.7 | 王者期 | 大翅膀+猫爪光环 | 强大气场 |
+| Lv.8 | 传说期 | 神圣皇冠+大翅膀+漂浮+猫爪符号环绕 | 完全神圣化 |
+
+### 示例：小狗装饰设计
+
+| 等级 | 装饰主题 | 具体元素 | 设计理念 |
+|------|---------|---------|---------|
+| Lv.1 | 婴儿期 | 蓝色小领结 | 简单可爱 |
+| Lv.2 | 幼年期 | 骨头项圈+小球 | 狗喜欢骨头和球 |
+| Lv.3 | 成长期 | 星星狗牌 | 身份标识升级 |
+| Lv.4 | 少年期 | 金色骨头项链 | 华丽版骨头元素 |
+| Lv.5 | 青年期 | 小皇冠+狗爪印记 | 王者气质 |
+| Lv.6 | 成熟期 | 华丽皇冠+狗耳+翅膀 | 忠诚天使形象 |
+| Lv.7 | 王者期 | 大翅膀+狗爪光环 | 守护天使 |
+| Lv.8 | 传说期 | 神圣皇冠+大翅膀+漂浮+忠诚符号 | 神圣守护 |
+
+### 待设计宠物清单
+
+**普通动物（18种）：**
+- [x] cat - 小猫
+- [x] dog - 小狗
+- [ ] rabbit - 小兔
+- [ ] hamster - 仓鼠
+- [ ] bird - 小鸟
+- [ ] fish - 小鱼
+- [ ] turtle - 小龟
+- [ ] frog - 青蛙
+- [ ] duck - 小鸭
+- [ ] penguin - 企鹅
+- [ ] bear - 小熊
+- [ ] fox - 小狐狸
+- [ ] deer - 小鹿
+- [ ] squirrel - 松鼠
+- [ ] panda - 熊猫
+- [ ] koala - 考拉
+- [ ] hedgehog - 刺猬
+- [ ] owl - 猫头鹰
+
+**神兽（7种）：**
+- [ ] dragon - 小龙
+- [ ] phoenix - 凤凰
+- [ ] unicorn - 独角兽
+- [ ] kirin - 麒麟
+- [ ] pegasus - 飞马
+- [ ] nine_tailed_fox - 九尾狐
+- [ ] qilin - 青龙
+
+---
+
+## 三、Prompt模板（严格统一）
+
+### 基础结构
+```
+A cute [宠物主体描述], [等级装饰描述],
+[严格统一风格词],
+[背景描述],
+masterpiece, best quality, 8k
+```
+
+### 风格词（所有宠物完全相同）
+```
+flat cartoon illustration, kawaii chibi style, consistent character design,
+cute friendly expression, big round sparkling eyes with white highlights,
+soft rounded shapes, smooth clean outlines, no sharp edges,
+bright saturated warm colors, soft shading, 2D vector art style,
+children book illustration style, standing pose, front facing
+```
+
+### 负面词（所有宠物完全相同）
+```
+3D, realistic, photograph, scary, dark, complex background,
+busy background, text, watermark, signature, blurry, low quality,
+different style, inconsistent design, ugly, deformed
+```
+
+### 背景词（根据等级）
+| 等级 | 背景 |
 |------|------|
-| 画风 | 扁平卡通、Kawaii、Chibi比例 |
-| 线条 | 圆润柔和，深色描边 |
-| 色彩 | 明亮饱和，暖色调为主 |
-| 表情 | 开心、友好、大眼睛高光 |
-| 姿态 | 正面站立，45度侧面 |
+| Lv.1-2 | simple soft gradient background, pastel colors |
+| Lv.3-4 | soft nature background with bokeh effect |
+| Lv.5-6 | golden light rays, soft glow background |
+| Lv.7-8 | divine golden light, ethereal glow, cosmic stars |
+
+### 完整Prompt示例（cat Lv.5）
+```
+A cute fluffy orange and white cat with big round eyes and pink nose,
+wearing small golden crown with cat paw prints on head,
+flat cartoon illustration, kawaii chibi style, consistent character design,
+cute friendly expression, big round sparkling eyes with white highlights,
+soft rounded shapes, smooth clean outlines, no sharp edges,
+bright saturated warm colors, soft shading, 2D vector art style,
+children book illustration style, standing pose, front facing,
+golden light rays background, soft glow,
+masterpiece, best quality, 8k
+```
 
 ---
 
-## 二、等级装饰设计
+## 四、画风统一检查清单
 
-### 通用装饰模板（适用于所有宠物）
+生成每张图后检查：
+- [ ] 是否扁平2D风格（非3D）
+- [ ] 眼睛是否大而圆带高光
+- [ ] 线条是否圆润无尖角
+- [ ] 色彩是否明亮温暖
+- [ ] 是否与已生成图片风格一致
+- [ ] 背景是否简洁不喧宾夺主
 
-| 等级 | 装饰名称 | 必需元素 | 特效 | 背景 |
-|------|---------|---------|------|------|
-| Lv.1 | 粉色丝带 | 蝴蝶结、小装饰 | 柔和色彩 | 草地花丛 |
-| Lv.2 | 铃铛项圈 | 金色铃铛、项圈 | 微光 | 花园蝴蝶 |
-| Lv.3 | 星星项圈 | 星形吊坠、闪亮 | 魔法光晕 | 魔法森林 |
-| Lv.4 | 宝石项链 | 宝石、金色链条 | 金色 aura | 古森林瀑布 |
-| Lv.5 | 小皇冠 | 小皇冠、珠宝 | 粒子效果 | 云端山峰 |
-| Lv.6 | 皇冠+翅膀 | 皇冠+小翅膀+halo | 金色光环 | 天空浮岛 |
-| Lv.7 | 华丽皇冠+大翅膀 | 华丽皇冠+大翅膀 | 强烈光芒 | 云中神殿 |
-| Lv.8 | 神圣皇冠+天使翅膀 | 皇冠+大翅膀+漂浮+神圣符号 | 金色光束+符号环绕 | 星空神殿 |
-
-### 宠物特定装饰（可选差异化）
-
-| 宠物类型 | Lv.1-4差异化 | Lv.5-8差异化 |
-|---------|-------------|-------------|
-| 猫科 | 铃铛、毛线球 | 猫耳皇冠、猫爪符号 |
-| 犬科 | 骨头项圈、球 | 狗耳皇冠、忠诚符号 |
-| 鸟类 | 羽毛装饰 | 羽冠、飞翔光环 |
-| 水生 | 贝壳、珊瑚 | 三叉戟、波浪光环 |
-| 神兽 | 宝石、符文 | 神冠、元素光环 |
+**如果不一致，立即调整Prompt重新生成**
 
 ---
 
-## 三、Prompt模板
+## 五、操作流程
 
-### 基础模板
-```
-A cute [宠物描述], wearing [等级装饰], [特效],
-flat cartoon style, kawaii, chibi proportions, cute and friendly,
-big round eyes with highlights, soft rounded shapes, smooth outlines,
-vibrant colors, masterpiece, standing pose, front view, happy expression,
-[背景], 8k, highly detailed
-```
+### 1. 设计宠物装饰
+为每种宠物设计8个等级的装饰（参考cat/dog示例）
 
-### 负面Prompt（统一）
-```
-ugly, deformed, noisy, blurry, realistic, scary, dark, violent,
-text, watermark, bad anatomy, extra limbs, poorly drawn
-```
-
-### 强调词（用于重生成）
-- 装饰不可见 → `prominently displayed`, `clearly visible`
-- 元素缺失 → `must have`, `essential element`
-- 位置错误 → `on the head`, `around the neck`
-- 不够华丽 → `ornate`, `intricate details`, `shiny`
-
----
-
-## 四、操作流程
-
-### 一键生成
+### 2. 生成图片
 ```bash
-cd /root/.openclaw/workspace/projects/class-pet-garden
-
-# 生成单个宠物所有等级
-python scripts/generate_pets.py --pet cat --all
-
-# 自动生成 + 自动审核 + 自动重生成（直到达标）
-python scripts/auto_pipeline.py --pet cat --all
+python scripts/generate_pets.py --pet [宠物名] --all
 ```
 
-### 分步操作
-```bash
-# 1. 生成
-python scripts/generate_pets.py --pet cat --level 5
+### 3. 画风检查
+- 视觉对比已生成的图片
+- 确认风格统一
+- 不统一则调整Prompt重新生成
 
-# 2. 基础检查
-python scripts/check_images.py --pet cat
+### 4. 装饰审核
+- 检查装饰是否清晰可见
+- 检查是否符合设计要求
+- 不通过则重新生成
 
-# 3. 严格审核
-python scripts/strict_audit.py --pet cat
-
-# 4. 自动重生成（如有失败）
-python scripts/auto_regenerate.py --pet cat
-
-# 5. 再次审核（循环直到全部通过）
-```
+### 5. 完成确认
+8张图风格统一、装饰清晰后，标记完成
 
 ---
 
-## 五、质量检查
+## 六、质量把控
 
-### 自动检查项
-- [x] 文件存在（8张）
-- [x] 尺寸正确（512×512）
-- [x] 格式正确（PNG）
-- [x] 文件大小合理（100KB-2MB）
-- [x] 图片可读（无损坏）
+### 画风统一策略
+1. **使用完全相同的风格词**（复制粘贴，不改动）
+2. **先生成Lv.1和Lv.8作为基准**
+3. **中间等级与基准对比**，确保一致
+4. **发现问题立即调整**，不累积
 
-### AI严格审核项
-- [x] 装饰可见性（一眼可见）
-- [x] 装饰完整性（所有必需元素）
-- [x] 位置正确性（正确部位）
-- [x] 等级区分度（比低等级华丽）
-
-### 人工最终审核
-- [x] 可爱度达标
-- [x] 风格统一
-- [x] 无变形/错误
+### 常见问题处理
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| 画风不一致 | 风格词被修改 | 复制粘贴统一风格词 |
+| 太写实 | 缺少风格词 | 添加`flat cartoon illustration` |
+| 背景太复杂 | 背景描述过多 | 简化背景，使用`simple background` |
+| 眼睛不够大 | 缺少眼睛描述 | 添加`big round sparkling eyes` |
 
 ---
 
-## 六、重生成策略
+## 七、下一步行动
 
-### 自动重生成规则
-- AI审核不通过 → 自动重生成（无需确认）
-- 单张最多重试3次
-- Prompt自动优化（添加强调词）
-- 超过3次仍失败 → 标记人工处理
+1. **确认cat的8张图风格统一**
+   - 对比Lv.1和Lv.8
+   - 确认画风一致
+   - 如有问题，调整Prompt重新生成
 
-### Prompt优化示例
-**原始**：`wearing small crown`
-**优化**：`wearing prominently displayed small golden crown on head with clearly visible jewels`
+2. **设计dog的装饰**
+   - 参考cat示例
+   - 设计8个等级的装饰
+   - 生成并检查
 
----
-
-## 七、宠物清单
-
-### 普通动物（18种）
-| 宠物 | 基础描述 | 特色装饰 |
-|------|---------|---------|
-| cat | cute fluffy cat, big eyes, pink nose | 猫耳、毛线球 |
-| dog | cute friendly dog, floppy ears | 骨头、球 |
-| rabbit | cute rabbit, long ears, cotton tail | 胡萝卜、蝴蝶结 |
-| hamster | cute hamster, round body | 瓜子、轮子 |
-| bird | cute bird, colorful feathers | 音符、羽毛 |
-| ... | ... | ... |
-
-### 神兽（7种）
-| 宠物 | 基础描述 | 特色装饰 |
-|------|---------|---------|
-| dragon | cute baby dragon, wings | 火焰、宝石 |
-| phoenix | cute phoenix, fiery feathers | 火焰光环 |
-| unicorn | cute unicorn, horn, rainbow mane | 彩虹、星星 |
-| ... | ... | ... |
+3. **继续其他宠物**
+   - 逐个设计装饰
+   - 生成并检查画风
+   - 确保与cat/dog风格统一
 
 ---
 
-## 八、文件结构
-
-```
-public/pets/
-├── cat/
-│   ├── lv1.png
-│   ├── lv2.png
-│   ├── ...
-│   └── lv8.png
-├── dog/
-│   ├── lv1.png
-│   └── ...
-└── ...
-
-scripts/
-├── generate_pets.py      # 基础生成
-├── check_images.py       # 基础检查
-├── strict_audit.py       # AI严格审核
-├── auto_regenerate.py    # 自动重生成
-└── auto_pipeline.py      # 一键自动化
-```
-
----
-
-## 九、成本估算
-
-| 项目 | 数量 | 单价 | 总价 |
-|------|------|------|------|
-| 宠物种类 | 25 | - | - |
-| 等级 | 8 | - | - |
-| 总图片 | 200 | ¥0.03 | ¥6 |
-| 重试/测试 | 50 | ¥0.03 | ¥1.5 |
-| **总计** | | | **约¥7.5** |
-
----
-
-## 十、常见问题
-
-**Q: 装饰不清晰怎么办？**
-A: 自动重生成会添加 `prominently displayed`, `clearly visible` 等强调词
-
-**Q: 风格不一致怎么办？**
-A: 统一使用 STYLE_TEMPLATE，确保所有Prompt包含相同风格描述
-
-**Q: 某张图重试3次仍失败？**
-A: 标记为人工处理，可能需要调整装饰设计或改用其他方案
-
-**Q: 如何确保背景不喧宾夺主？**
-A: 背景描述放在Prompt末尾，使用 `blurred background` 等词
-
----
-
-## 十一、快速开始
-
-```bash
-# 1. 进入项目
-cd /root/.openclaw/workspace/projects/class-pet-garden
-
-# 2. 生成测试（cat）
-python scripts/generate_pets.py --pet cat --all
-
-# 3. 自动审核+重生成
-python scripts/auto_regenerate.py
-
-# 4. 查看结果
-ls -la public/pets/cat/
-
-# 5. 在bridge中预览
-# 访问 http://localhost:5000 -> 图片 -> pet-garden-pets
-```
-
----
-
-**下一步：确认cat的8张图片后，开始生成dog或其他宠物**
+**关键：严格使用统一的风格词，确保所有宠物画风一致！**
