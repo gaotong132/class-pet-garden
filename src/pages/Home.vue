@@ -770,12 +770,12 @@ onMounted(async () => {
             
             <!-- 宠物进化动画区域 -->
             <div class="relative w-48 h-48 mx-auto my-6">
-              <!-- 进化光环 -->
-              <div class="absolute inset-0 rounded-full bg-gradient-to-r from-orange-300 via-pink-300 to-purple-300 opacity-50 animate-spin" style="animation-duration: 3s"></div>
-              <div class="absolute inset-2 rounded-full bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-300 opacity-40 animate-spin" style="animation-duration: 2s; animation-direction: reverse"></div>
+              <!-- 进化光环 - 改为圆角矩形与图片风格一致 -->
+              <div class="absolute inset-0 rounded-3xl bg-gradient-to-r from-orange-300 via-pink-300 to-purple-300 opacity-50 animate-spin" style="animation-duration: 3s"></div>
+              <div class="absolute inset-2 rounded-3xl bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-300 opacity-40 animate-spin" style="animation-duration: 2s; animation-direction: reverse"></div>
               
-              <!-- 宠物图片容器 -->
-              <div class="absolute inset-4 rounded-full overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 shadow-inner">
+              <!-- 宠物图片容器 - 圆角矩形与宠物图片风格一致 -->
+              <div class="absolute inset-4 rounded-2xl overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 shadow-inner">
                 <!-- 升级前图片 - 初始显示，过渡阶段淡出 -->
                 <img 
                   :src="getPetLevelImage(levelUpInfo.petType, levelUpInfo.prevLevel)" 

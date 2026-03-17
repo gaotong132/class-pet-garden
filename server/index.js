@@ -622,6 +622,38 @@ app.post('/api/restore', (req, res) => {
   }
 })
 
-app.listen(PORT, () => {
+// 错误处理
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err)
+  // 不退出进程，保持服务运行
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+  // 不退出进程，保持服务运行
+})
+
+// 启动服务器
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`)
+  console.log(`📅 ${new Date().toLocaleString()}`)
+})
+
+// 优雅关闭
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully')
+  server.close(() => {
+    console.log('Server closed')
+    db.close()
+    process.exit(0)
+  })
+})
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully')
+  server.close(() => {
+    console.log('Server closed')
+    db.close()
+    process.exit(0)
+  })
 })
