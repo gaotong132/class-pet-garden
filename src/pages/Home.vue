@@ -1166,7 +1166,7 @@ onMounted(async () => {
             </Transition>
             
             <!-- 宠物图片区域 -->
-            <div class="aspect-square flex items-center justify-center overflow-hidden relative"
+            <div class="aspect-square flex items-center justify-center overflow-hidden relative rounded-t-2xl"
               :class="student.pet_type ? 'bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100' : 'bg-gradient-to-br from-gray-100 via-slate-50 to-gray-100'"
             >
               <!-- 有宠物时使用 PetImage 组件 -->
