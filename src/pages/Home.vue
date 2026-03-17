@@ -1683,25 +1683,27 @@ onMounted(async () => {
                 {{ cat }}
               </button>
             </div>
-            <!-- 规则按钮 - 每行5个 -->
-            <div class="grid grid-cols-5 gap-2">
-              <button 
-                v-for="rule in rules.filter(r => r.category === detailEvalTab)" 
-                :key="rule.id"
-                @click="detailQuickAdd(rule)"
-                class="rounded-xl p-2 text-center transition-all border-2 hover:scale-105 active:scale-95"
-                :class="rule.points > 0 
-                  ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-400' 
-                  : 'bg-gradient-to-br from-red-50 to-pink-50 border-red-200 hover:border-red-400'"
-              >
-                <div 
-                  class="text-base font-bold"
-                  :class="rule.points > 0 ? 'text-green-500' : 'text-red-500'"
+            <!-- 规则按钮 - 每行5个，固定3行高度 -->
+            <div class="h-[210px] overflow-y-auto pr-1 custom-scrollbar">
+              <div class="grid grid-cols-5 gap-2 content-start">
+                <button 
+                  v-for="rule in rules.filter(r => r.category === detailEvalTab)" 
+                  :key="rule.id"
+                  @click="detailQuickAdd(rule)"
+                  class="rounded-xl p-2 text-center transition-all border-2 hover:scale-105 active:scale-95 h-[65px]"
+                  :class="rule.points > 0 
+                    ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-400' 
+                    : 'bg-gradient-to-br from-red-50 to-pink-50 border-red-200 hover:border-red-400'"
                 >
-                  {{ rule.points > 0 ? '+' : '' }}{{ rule.points }}
-                </div>
-                <div class="text-xs text-gray-600 truncate">{{ rule.name }}</div>
-              </button>
+                  <div 
+                    class="text-base font-bold"
+                    :class="rule.points > 0 ? 'text-green-500' : 'text-red-500'"
+                  >
+                    {{ rule.points > 0 ? '+' : '' }}{{ rule.points }}
+                  </div>
+                  <div class="text-xs text-gray-600 truncate">{{ rule.name }}</div>
+                </button>
+              </div>
             </div>
           </div>
           
