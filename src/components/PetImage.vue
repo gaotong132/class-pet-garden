@@ -1,0 +1,111 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+
+interface Props {
+  src: string
+  alt?: string
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  rounded?: boolean
+  hoverScale?: boolean
+  showLoading?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  alt: '',
+  size: 'md',
+  rounded: true,
+  hoverScale: true,
+  showLoading: true
+})
+
+const isLoaded = ref(false)
+const hasError = ref(false)
+
+const sizeClasses = computed(() => {
+  const sizes: Record<string, string> = {
+    sm: 'w-8 h-8',
+    md: 'w-12 h-12',
+    lg: 'w-16 h-16',
+    xl: 'w-24 h-24',
+    full: 'w-full h-full'
+  }
+  return sizes[props.size] || sizes.md
+})
+
+function onLoad() {
+  isLoaded.value = true
+}
+
+function onError() {
+  hasError.value = true
+  isLoaded.value = true
+}
+
+// 随机选择加载动画表情
+const loadingEmojis = ['🐾', '🐕', '🐈', '🐇', '🐹', '🦆', '🦙', '🐼', '🐯', '🦄', '🐉', '🦅']
+const randomEmoji = computed(() => loadingEmojis[Math.floor(Math.random() * loadingEmojis.length)])
+</script>
+
+<template>
+  <div 
+    class="relative overflow-hidden flex items-center justify-center"
+    :class="[
+      sizeClasses,
+      rounded ? 'rounded-full' : 'rounded-lg'
+    ]"
+  >
+    <!-- 加载状态 - 可爱动物爪印动画 -->
+    <Transition name="fade">
+      <div 
+        v-if="showLoading && !isLoaded" 
+        class="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-orange-100 to-pink-100"
+      >
+        <!-- 爪印动画 -->
+        <div class="relative">
+          <span class="text-2xl animate-bounce">{{ randomEmoji }}</span>
+          <!-- 爪印轨迹 -->
+          <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+            <span class="w-1.5 h-1.5 bg-orange-300 rounded-full animate-pulse" style="animation-delay: 0ms"></span>
+            <span class="w-1.5 h-1.5 bg-pink-300 rounded-full animate-pulse" style="animation-delay: 150ms"></span>
+            <span class="w-1.5 h-1.5 bg-orange-300 rounded-full animate-pulse" style="animation-delay: 300ms"></span>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- 错误状态 -->
+    <Transition name="fade">
+      <div 
+        v-if="hasError" 
+        class="absolute inset-0 flex items-center justify-center bg-gray-100"
+      >
+        <span class="text-xl text-gray-400">🐾</span>
+      </div>
+    </Transition>
+
+    <!-- 图片 -->
+    <img
+      :src="src"
+      :alt="alt"
+      class="w-full h-full object-contain p-1 transition-all duration-300"
+      :class="[
+        isLoaded ? 'opacity-100' : 'opacity-0',
+        hoverScale ? 'hover:scale-110' : ''
+      ]"
+      @load="onLoad"
+      @error="onError"
+    />
+  </div>
+</template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

@@ -2,6 +2,8 @@
 import { ref, onMounted, computed, nextTick } from 'vue'
 import axios from 'axios'
 import { PET_TYPES, getPetType, getLevelProgress, calculateLevel, getPetLevelImage, getPetLevel1Image } from '@/data/pets'
+import PetImage from '@/components/PetImage.vue'
+import PetLoading from '@/components/PetLoading.vue'
 
 // 配置 axios baseURL
 const api = axios.create({
@@ -75,16 +77,17 @@ const sortOrder = ref<'asc' | 'desc'>('asc')
 const showSortMenu = ref(false)
 const showPetMenu = ref(false)
 
+// 图片加载状态（用于升级动画）
+const levelUpImagesLoaded = ref({ prev: false, current: false })
+
 // 动画状态
 const showLevelUpAnimation = ref(false)
 const levelUpInfo = ref({ name: '', level: 0, petType: '', prevLevel: 0 })
-const levelUpImagesLoaded = ref({ prev: false, current: false })
 const isLoaded = ref(false)
 const isLoading = ref(true)
 
 // 图片加载状态
 const imageLoaded = ref<Record<string, boolean>>({})
-const studentImageLoaded = ref<Record<string, boolean>>({})
 
 // 详情面板
 const showDetailPanel = ref(false)
@@ -765,9 +768,9 @@ onMounted(async () => {
               <div class="absolute inset-0 rounded-full bg-gradient-to-r from-orange-300 via-pink-300 to-purple-300 opacity-50 animate-spin" style="animation-duration: 3s"></div>
               <div class="absolute inset-2 rounded-full bg-gradient-to-r from-yellow-300 via-orange-300 to-pink-300 opacity-40 animate-spin" style="animation-duration: 2s; animation-direction: reverse"></div>
               
-              <!-- 加载动画 -->
+              <!-- 加载动画 - 使用 PetLoading 组件 -->
               <div v-if="!levelUpImagesLoaded.prev || !levelUpImagesLoaded.current" class="absolute inset-0 flex items-center justify-center">
-                <div class="text-4xl animate-bounce">✨</div>
+                <PetLoading size="lg" text="" :show-paw-trail="true" />
               </div>
               
               <!-- 宠物图片容器 -->
@@ -1054,26 +1057,15 @@ onMounted(async () => {
               <div class="aspect-square flex items-center justify-center overflow-hidden relative"
                 :class="student.pet_type ? 'bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100' : 'bg-gradient-to-br from-gray-100 via-slate-50 to-gray-100'"
               >
-                <!-- 有宠物时的加载动画 -->
+                <!-- 有宠物时使用 PetImage 组件 -->
                 <template v-if="student.pet_type">
-                  <!-- 加载动画 - 宠物主题 paw prints -->
-                  <div 
-                    v-if="!studentImageLoaded[student.id]" 
-                    class="absolute inset-0 flex flex-col items-center justify-center"
-                  >
-                    <div class="flex items-center gap-2">
-                      <span class="text-2xl animate-bounce" style="animation-delay: 0ms">🐾</span>
-                      <span class="text-2xl animate-bounce" style="animation-delay: 150ms">🐾</span>
-                      <span class="text-2xl animate-bounce" style="animation-delay: 300ms">🐾</span>
-                    </div>
-                    <div class="mt-2 text-xs text-orange-400 font-medium">加载中...</div>
-                  </div>
-                  <!-- 宠物图片 -->
-                  <img 
-                    :src="getStudentPetImage(student)" 
-                    class="w-full h-full object-cover group-hover:scale-110 transition-all duration-500"
-                    :class="studentImageLoaded[student.id] ? 'opacity-100' : 'opacity-0'"
-                    @load="studentImageLoaded[student.id] = true"
+                  <PetImage
+                    :src="getStudentPetImage(student)"
+                    :alt="getPetType(student.pet_type)?.name"
+                    size="full"
+                    :rounded="false"
+                    :show-loading="true"
+                    class="w-full h-full"
                   />
                 </template>
                 <!-- 未领养宠物 -->

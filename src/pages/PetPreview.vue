@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { PET_TYPES, getPetLevelImage } from '@/data/pets'
+import PetImage from '@/components/PetImage.vue'
 
 // 分类标签
 const categories = [
@@ -12,7 +13,6 @@ const categories = [
 const currentCategory = ref('all')
 const selectedPet = ref<string | null>(null)
 const selectedLevel = ref(1)
-const imageLoaded = ref<Record<string, boolean>>({})
 
 
 
@@ -111,10 +111,12 @@ function closeDetail() {
           class="bg-white rounded-2xl p-3 shadow-card hover:shadow-card-hover transition-all cursor-pointer group"
         >
           <div class="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 mb-2 relative">
-            <img
+            <PetImage
               :src="getPetLevelImage(pet.id, 1)"
-              class="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform"
-              @load="imageLoaded[`${pet.id}-1`] = true"
+              :alt="pet.name"
+              size="full"
+              :rounded="false"
+              :hover-scale="true"
             />
           </div>
           <div class="text-center">
@@ -139,10 +141,12 @@ function closeDetail() {
           class="bg-white rounded-2xl p-3 shadow-card hover:shadow-card-hover transition-all cursor-pointer group"
         >
           <div class="aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 mb-2 relative">
-            <img
+            <PetImage
               :src="getPetLevelImage(pet.id, 1)"
-              class="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform"
-              @load="imageLoaded[`${pet.id}-1`] = true"
+              :alt="pet.name"
+              size="full"
+              :rounded="false"
+              :hover-scale="true"
             />
           </div>
           <div class="text-center">
@@ -161,7 +165,12 @@ function closeDetail() {
           <div class="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 p-6 rounded-t-3xl flex items-center justify-between">
             <div class="flex items-center gap-4">
               <div class="w-16 h-16 rounded-2xl overflow-hidden bg-white/20 flex items-center justify-center">
-                <img :src="getPetLevelImage(selectedPet, selectedLevel)" class="w-12 h-12 object-contain" />
+                <PetImage
+                  :src="getPetLevelImage(selectedPet, selectedLevel)"
+                  size="md"
+                  :rounded="true"
+                  :show-loading="false"
+                />
               </div>
               <div class="text-white">
                 <h2 class="text-2xl font-bold">{{ PET_TYPES.find(p => p.id === selectedPet)?.name }}</h2>
@@ -182,9 +191,12 @@ function closeDetail() {
             <div class="flex flex-col md:flex-row gap-6 mb-8">
               <div class="w-full md:w-1/2">
                 <div class="aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-orange-100 via-pink-100 to-purple-100 shadow-inner relative">
-                  <img
+                  <PetImage
                     :src="getPetLevelImage(selectedPet, selectedLevel)"
-                    class="w-full h-full object-contain p-6"
+                    :alt="PET_TYPES.find(p => p.id === selectedPet)?.name"
+                    size="full"
+                    :rounded="false"
+                    :show-loading="true"
                   />
                   <div class="absolute top-4 right-4 font-bold px-4 py-2 rounded-full shadow-lg text-white text-lg bg-gradient-to-r"
                     :class="getLevelColor(selectedLevel)"
@@ -223,9 +235,12 @@ function closeDetail() {
                 :class="selectedLevel === level ? 'ring-4 ring-orange-400 scale-105' : 'hover:scale-105'"
               >
                 <div class="absolute inset-0 bg-gradient-to-br" :class="getLevelColor(level)"></div>
-                <img
+                <PetImage
                   :src="getPetLevelImage(selectedPet, level)"
-                  class="relative z-10 w-full h-full object-contain p-2"
+                  size="full"
+                  :rounded="false"
+                  :show-loading="false"
+                  class="relative z-10"
                 />
                 <div class="absolute bottom-1 left-1 right-1 z-20">
                   <div class="bg-white/90 rounded-lg py-1 text-center">
