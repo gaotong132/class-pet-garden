@@ -1271,33 +1271,35 @@ onMounted(async () => {
             </button>
           </div>
           
-          <!-- 规则网格 - 固定高度防止切换时跳变 -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 min-h-[320px]">
-            <button 
-              v-for="rule in currentCategoryRules" 
-              :key="rule.id"
-              @click="quickAdd(selectedStudent, rule); showAddModal = false"
-              class="rounded-2xl p-4 text-left transition-all border-2 hover:scale-105 hover:shadow-lg active:scale-95 h-[100px]"
-              :class="rule.points > 0 
-                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-400' 
-                : 'bg-gradient-to-br from-red-50 to-pink-50 border-red-200 hover:border-red-400'"
-            >
-              <div class="flex items-center justify-between mb-2">
-                <span 
-                  class="font-bold text-2xl"
-                  :class="rule.points > 0 ? 'text-green-500' : 'text-red-500'"
-                >
-                  {{ rule.points > 0 ? '+' : '' }}{{ rule.points }}
-                </span>
-                <span 
-                  class="text-xs px-2 py-1 rounded-full font-medium"
-                  :class="rule.points > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
-                >
-                  {{ rule.points > 0 ? '加分' : '扣分' }}
-                </span>
-              </div>
-              <div class="text-sm text-gray-700 font-medium">{{ rule.name }}</div>
-            </button>
+          <!-- 规则网格 - 固定高度容器，内部可滚动 -->
+          <div class="h-[360px] overflow-y-auto pr-2 custom-scrollbar">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <button 
+                v-for="rule in currentCategoryRules" 
+                :key="rule.id"
+                @click="quickAdd(selectedStudent, rule); showAddModal = false"
+                class="rounded-2xl p-4 text-left transition-all border-2 hover:scale-105 hover:shadow-lg active:scale-95 h-[100px]"
+                :class="rule.points > 0 
+                  ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-400' 
+                  : 'bg-gradient-to-br from-red-50 to-pink-50 border-red-200 hover:border-red-400'"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <span 
+                    class="font-bold text-2xl"
+                    :class="rule.points > 0 ? 'text-green-500' : 'text-red-500'"
+                  >
+                    {{ rule.points > 0 ? '+' : '' }}{{ rule.points }}
+                  </span>
+                  <span 
+                    class="text-xs px-2 py-1 rounded-full font-medium"
+                    :class="rule.points > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+                  >
+                    {{ rule.points > 0 ? '加分' : '扣分' }}
+                  </span>
+                </div>
+                <div class="text-sm text-gray-700 font-medium">{{ rule.name }}</div>
+              </button>
+            </div>
           </div>
 
           <div class="flex justify-end mt-6">
@@ -1896,5 +1898,24 @@ onMounted(async () => {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* 自定义滚动条 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #fb923c, #f472b6);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #f97316, #ec4899);
 }
 </style>
