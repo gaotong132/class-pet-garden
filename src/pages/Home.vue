@@ -862,7 +862,7 @@ onMounted(async () => {
       <!-- Left -->
       <div class="flex items-center gap-3">
         <h1 class="text-xl font-bold text-white drop-shadow-lg flex items-center gap-2">
-          <span class="text-2xl animate-bounce-slow">🐕</span>
+          <span class="text-2xl animate-bounce-slow">🐾</span>
           <span class="text-gradient">班级宠物园</span>
         </h1>
         <select 
