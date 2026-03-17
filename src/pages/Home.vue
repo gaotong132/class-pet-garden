@@ -78,6 +78,7 @@ const showPetMenu = ref(false)
 
 // 图片加载状态（用于升级动画）
 const levelUpImagesLoaded = ref({ prev: false, current: false })
+const levelUpPhase = ref<'show-prev' | 'transition' | 'show-current'>('show-prev')
 
 // 动画状态
 const showLevelUpAnimation = ref(false)
@@ -487,10 +488,13 @@ async function detailQuickAdd(rule: Rule) {
         prevLevel: res.data.petLevel - 1
       }
       levelUpImagesLoaded.value = { prev: false, current: false }
+      levelUpPhase.value = 'show-prev'
       showLevelUpAnimation.value = true
-      setTimeout(() => {
-        showLevelUpAnimation.value = false
-      }, 4000)
+      
+      // 动画时序控制
+      setTimeout(() => { levelUpPhase.value = 'transition' }, 500)
+      setTimeout(() => { levelUpPhase.value = 'show-current' }, 1500)
+      setTimeout(() => { showLevelUpAnimation.value = false }, 4000)
     }
     if (res.data.graduated) {
       alert(`🎓 恭喜！${student.name} 的宠物毕业了，获得了专属徽章！`)
@@ -555,10 +559,13 @@ async function quickAdd(student: Student | null, rule: Rule) {
         prevLevel: res.data.petLevel - 1
       }
       levelUpImagesLoaded.value = { prev: false, current: false }
+      levelUpPhase.value = 'show-prev'
       showLevelUpAnimation.value = true
-      setTimeout(() => {
-        showLevelUpAnimation.value = false
-      }, 4000)
+      
+      // 动画时序控制
+      setTimeout(() => { levelUpPhase.value = 'transition' }, 500)
+      setTimeout(() => { levelUpPhase.value = 'show-current' }, 1500)
+      setTimeout(() => { showLevelUpAnimation.value = false }, 4000)
     }
     if (res.data.graduated) {
       alert(`🎓 恭喜！${student.name} 的宠物毕业了，获得了专属徽章！`)
@@ -769,19 +776,17 @@ onMounted(async () => {
               
               <!-- 宠物图片容器 -->
               <div class="absolute inset-4 rounded-full overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100 shadow-inner">
-                <!-- 升级前图片 - 淡出 -->
+                <!-- 升级前图片 - 初始显示，过渡阶段淡出 -->
                 <img 
                   :src="getPetLevelImage(levelUpInfo.petType, levelUpInfo.prevLevel)" 
                   class="absolute inset-0 w-full h-full object-contain p-2 transition-all duration-1000"
-                  :class="levelUpImagesLoaded.prev ? 'opacity-0 scale-50' : 'opacity-100 scale-100'"
-                  @load="levelUpImagesLoaded.prev = true"
+                  :class="levelUpPhase === 'show-prev' ? 'opacity-100 scale-100' : 'opacity-0 scale-50'"
                 />
-                <!-- 升级后图片 - 淡入 -->
+                <!-- 升级后图片 - 过渡阶段淡入，最终显示 -->
                 <img 
                   :src="getPetLevelImage(levelUpInfo.petType, levelUpInfo.level)" 
                   class="absolute inset-0 w-full h-full object-contain p-2 transition-all duration-1000"
-                  :class="levelUpImagesLoaded.current ? 'opacity-100 scale-100' : 'opacity-0 scale-150'"
-                  @load="levelUpImagesLoaded.current = true"
+                  :class="levelUpPhase === 'show-current' ? 'opacity-100 scale-100' : 'opacity-0 scale-150'"
                 />
               </div>
               
