@@ -12,16 +12,12 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  addStudent: []
-  importStudents: []
-  deleteStudents: []
   login: []
   logout: []
 }>()
 
 const route = useRoute()
 
-const showStudentMenu = ref(false)
 const showUserMenu = ref(false)
 
 function isActive(path: string) {
@@ -100,6 +96,13 @@ function isActive(path: string) {
           📋 记录
         </router-link>
         <router-link 
+          to="/students" 
+          class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
+          :class="isActive('/students') ? 'bg-white text-orange-600 shadow-md' : 'text-white/90 hover:bg-white/20'"
+        >
+          👥 学生
+        </router-link>
+        <router-link 
           to="/preview" 
           class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
           :class="isActive('/preview') ? 'bg-white text-orange-600 shadow-md' : 'text-white/90 hover:bg-white/20'"
@@ -114,25 +117,6 @@ function isActive(path: string) {
           ⚙️ 规则
         </router-link>
       </nav>
-
-      <!-- 右侧：操作菜单 -->
-      <div class="flex items-center gap-1" v-if="!batchMode && currentClass">
-        <button @click="$emit('addStudent')" class="px-3 py-1.5 rounded-lg text-sm bg-white/30 hover:bg-white/40 text-white font-medium transition-all">
-          ➕ 添加学生
-        </button>
-        <div class="relative">
-          <button @click="showStudentMenu = !showStudentMenu" class="px-3 py-1.5 rounded-lg text-sm bg-white/30 hover:bg-white/40 text-white font-medium transition-all">
-            更多 ▾
-          </button>
-          <div v-if="showStudentMenu" @click="showStudentMenu = false" class="fixed inset-0 z-40"></div>
-          <Transition name="dropdown">
-            <div v-if="showStudentMenu" class="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 w-40 z-50 overflow-hidden">
-              <button @click="$emit('importStudents')" class="w-full text-left px-3 py-2 text-sm hover:bg-gradient-to-r hover:from-orange-50 hover:to-pink-50 transition-colors">📥 导入学生</button>
-              <button @click="$emit('deleteStudents')" class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">🗑️ 删除学生</button>
-            </div>
-          </Transition>
-        </div>
-      </div>
     </div>
   </header>
 </template>

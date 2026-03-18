@@ -516,9 +516,6 @@ onMounted(async () => {
       :is-guest="isGuest"
       :username="username"
       :batch-mode="batchMode"
-      @add-student="showStudentModal = true"
-      @import-students="showImportModal = true"
-      @delete-students="showDeleteStudentMode = true; deleteStudentList = []"
       @login="showAuthModal = true"
       @logout="logout(); loadClasses(); loadRules(); toast.success('已退出登录')"
     />
