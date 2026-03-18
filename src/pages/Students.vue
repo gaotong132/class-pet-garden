@@ -141,7 +141,7 @@ async function saveEdit() {
   try {
     await api.put(`/students/${editingStudent.value.id}`, {
       name: editName.value.trim(),
-      student_no: editStudentNo.value.trim() || null
+      studentNo: editStudentNo.value.trim() || null
     })
     toast.success('保存成功')
     editingStudent.value = null
@@ -333,9 +333,9 @@ onActivated(() => {
             <div class="col-span-1">宠物</div>
             <div class="col-span-3">姓名</div>
             <div class="col-span-2">学号</div>
-            <div class="col-span-2">积分</div>
-            <div class="col-span-2">等级</div>
-            <div class="col-span-1 text-right">操作</div>
+            <div class="col-span-1">积分</div>
+            <div class="col-span-1">等级</div>
+            <div class="col-span-3 text-right">操作</div>
           </div>
 
           <!-- 学生行 -->
@@ -385,9 +385,9 @@ onActivated(() => {
                   @keyup.escape="cancelEdit"
                 />
               </div>
-              <div class="col-span-2 text-sm text-gray-600">{{ student.total_points }}</div>
-              <div class="col-span-2 text-sm text-gray-600">Lv.{{ student.pet_level || 1 }}</div>
-              <div class="col-span-1 text-right flex justify-end gap-1">
+              <div class="col-span-1 text-sm text-gray-600">{{ student.total_points }}</div>
+              <div class="col-span-1 text-sm text-gray-600">Lv.{{ student.pet_level || 1 }}</div>
+              <div class="col-span-3 text-right">
                 <button @click="saveEdit" class="text-green-500 hover:text-green-600 text-sm font-medium px-2 py-1">保存</button>
                 <button @click="cancelEdit" class="text-gray-400 hover:text-gray-600 text-sm font-medium px-2 py-1">取消</button>
               </div>
@@ -397,11 +397,11 @@ onActivated(() => {
             <template v-else>
               <div class="col-span-3 font-medium text-gray-800">{{ student.name }}</div>
               <div class="col-span-2 text-sm text-gray-500">{{ student.student_no || '-' }}</div>
-              <div class="col-span-2 text-sm font-medium text-orange-500">{{ student.total_points }}</div>
-              <div class="col-span-2 text-sm text-gray-600">Lv.{{ student.pet_level || 1 }}</div>
-              <div class="col-span-1 text-right flex justify-end gap-2">
-                <button @click="startEdit(student)" class="text-blue-500 hover:text-blue-600 text-sm">编辑</button>
-                <button @click="deleteStudent(student.id)" class="text-red-400 hover:text-red-600 text-sm">删除</button>
+              <div class="col-span-1 text-sm font-medium text-orange-500">{{ student.total_points }}</div>
+              <div class="col-span-1 text-sm text-gray-600">Lv.{{ student.pet_level || 1 }}</div>
+              <div class="col-span-3 text-right">
+                <button @click="startEdit(student)" class="text-blue-500 hover:text-blue-600 text-sm px-2">编辑</button>
+                <button @click="deleteStudent(student.id)" class="text-red-400 hover:text-red-600 text-sm px-2">删除</button>
               </div>
             </template>
           </div>

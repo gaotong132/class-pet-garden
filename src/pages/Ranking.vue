@@ -231,8 +231,8 @@ onActivated(() => {
         <!-- 人群区域 -->
         <div class="crowd-section" v-if="crowd.length > 0">
           <div class="crowd-header">
-            <span class="crowd-icon">👥</span>
-            <span>其他参赛者</span>
+            <span class="crowd-icon">👀</span>
+            <span>吃瓜群众</span>
           </div>
           
           <div class="crowd-container">
