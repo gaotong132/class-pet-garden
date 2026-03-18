@@ -35,61 +35,32 @@
 
 ---
 
-### 阶段 2: Home.vue 拆分
+### 阶段 2: Home.vue 拆分 ✅
 **目标**: 将 2070 行拆分为多个可维护的组件
 
-#### 2.1 抽取 composables（状态逻辑）
-```
-src/composables/
-├── useClassManagement.ts    # 班级 CRUD
-├── useStudentManagement.ts  # 学生 CRUD  
-├── useEvaluation.ts         # 评价逻辑
-├── useAnimation.ts          # 动画状态（升级、评分动效）
-└── useModal.ts              # 模态框状态管理
-```
-
-#### 2.2 抽取组件
-```
-src/components/
-├── StudentCard.vue          # 学生卡片
-├── BatchActionBar.vue       # 批量操作栏
-├── modals/
-│   ├── ClassModal.vue       # 班级创建/编辑
-│   ├── StudentModal.vue     # 添加学生
-│   ├── ImportModal.vue      # 批量导入
-│   ├── EvalModal.vue        # 评价面板
-│   ├── PetSelectModal.vue   # 宠物选择
-│   ├── DetailPanel.vue      # 学生详情面板
-│   ├── RecordsModal.vue     # 评价记录
-│   ├── RulesModal.vue       # 规则管理
-│   ├── RankModal.vue        # 排行榜
-│   └── ConfirmDialog.vue    # 确认对话框（已存在）
-└── layout/
-    └── Header.vue           # 顶部导航
-```
-
-#### 2.3 Home.vue 重构后
-```vue
-<script setup>
-// 只保留协调逻辑
-import { useClassManagement } from '@/composables/useClassManagement'
-import { useStudentManagement } from '@/composables/useStudentManagement'
-// ...
-</script>
-
-<template>
-  <Header />
-  <main>
-    <StudentGrid :students="filteredStudents" />
-  </main>
-  <BatchActionBar v-if="batchMode" />
-  <!-- 模态框 -->
-  <ClassModal v-model="showClassModal" />
-  <!-- ... -->
-</template>
-```
-
-**预计行数**: ~300 行
+**已完成**:
+- [x] 抽取 composables（状态逻辑）
+  - [x] useClassManagement.ts - 班级 CRUD
+  - [x] useStudentManagement.ts - 学生 CRUD  
+  - [x] useEvaluations.ts - 评价逻辑
+  - [x] useLevelUp.ts - 动画状态（升级、评分动效）
+  - [x] useConfirm.ts - 确认对话框
+- [x] 抽取组件
+  - [x] StudentCard.vue - 学生卡片
+  - [x] BatchActionBar.vue - 批量操作栏
+  - [x] LevelUpModal.vue - 升级动画
+  - [x] LoadingScreen.vue - 加载动画
+  - [x] DetailPanel.vue - 学生详情面板
+  - [x] layout/Header.vue - 顶部导航
+  - [x] modals/ClassModal.vue - 班级创建/编辑
+  - [x] modals/StudentModal.vue - 添加学生
+  - [x] modals/ImportModal.vue - 批量导入
+  - [x] modals/EvaluationModal.vue - 评价面板
+  - [x] modals/PetSelectModal.vue - 宠物选择
+  - [x] modals/RankModal.vue - 排行榜
+  - [x] modals/RecordsModal.vue - 评价记录
+  - [x] modals/RulesModal.vue - 规则管理
+- [x] Home.vue 重构后: 648 行（原 2074 行）
 
 ---
 
