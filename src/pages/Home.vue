@@ -6,6 +6,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useLevelUp } from '@/composables/useLevelUp'
 import { getPetType } from '@/data/pets'
+import { pinyin } from 'pinyin-pro'
 
 // Components
 import LoadingScreen from '@/components/LoadingScreen.vue'
@@ -22,7 +23,6 @@ import ImportModal from '@/components/modals/ImportModal.vue'
 import EvaluationModal from '@/components/modals/EvaluationModal.vue'
 import PetModal from '@/components/modals/PetModal.vue'
 import RecordsModal from '@/components/modals/RecordsModal.vue'
-import RulesModal from '@/components/modals/RulesModal.vue'
 
 // Auth & Toast
 const { isGuest, username, logout, api } = useAuth()
@@ -43,17 +43,24 @@ const rules = ref<Rule[]>([])
 const searchQuery = ref('')
 const sortBy = ref<'name' | 'studentNo' | 'progress'>('name')
 const sortOrder = ref<'asc' | 'desc'>('asc')
+const sortType = ref('name-asc')
+
+function handleSortChange() {
+  const [by, order] = sortType.value.split('-')
+  sortBy.value = by as 'name' | 'studentNo' | 'progress'
+  sortOrder.value = order as 'asc' | 'desc'
+}
 const isLoading = ref(true)
 const isLoaded = ref(false)
 
 // Modal states
 const showClassModal = ref(false)
+const showClassSelect = ref(false)
 const showStudentModal = ref(false)
 const showImportModal = ref(false)
 const showEvalModal = ref(false)
 const showPetModal = ref(false)
 const showRecordsModal = ref(false)
-const showRulesModal = ref(false)
 const showDetailPanel = ref(false)
 const showAuthModal = ref(false)
 const editingClass = ref<Class | null>(null)
@@ -76,11 +83,38 @@ const totalPages = ref(0)
 // Score animations
 const scoreAnimations = ref<Map<string, { points: number; show: boolean }>>(new Map())
 
+// 辅助函数：获取拼音首字母
+function getPinyinInitials(text: string): string {
+  return pinyin(text, { pattern: 'first', toneType: 'none' }).replace(/\s/g, '').toLowerCase()
+}
+
+// 辅助函数：获取完整拼音
+function getPinyinFull(text: string): string {
+  return pinyin(text, { toneType: 'none' }).replace(/\s/g, '').toLowerCase()
+}
+
 // Computed
 const filteredStudents = computed(() => {
   let result = [...students.value]
   if (searchQuery.value) {
-    result = result.filter(s => s.name.includes(searchQuery.value))
+    const query = searchQuery.value.toLowerCase().trim()
+    result = result.filter(s => {
+      // 1. 姓名匹配
+      if (s.name.toLowerCase().includes(query)) return true
+      
+      // 2. 学号匹配
+      if (s.student_no && s.student_no.toLowerCase().includes(query)) return true
+      
+      // 3. 拼音首字母匹配（如 "cxm" 匹配 "陈小明"）
+      const initials = getPinyinInitials(s.name)
+      if (initials.includes(query)) return true
+      
+      // 4. 完整拼音匹配
+      const fullPinyin = getPinyinFull(s.name)
+      if (fullPinyin.includes(query)) return true
+      
+      return false
+    })
   }
   result.sort((a, b) => {
     let comparison = 0
@@ -447,32 +481,6 @@ async function handleUndoLastEvaluation(recordId?: string) {
   })
 }
 
-// Rules
-async function addRule(name: string, points: number, category: string) {
-  if (!name.trim()) { toast.warning('请输入规则名称'); return }
-  try {
-    await api.post('/rules', { name, points, category })
-    toast.success('添加成功！')
-    await loadRules()
-  } catch (error) {
-    toast.error('添加失败')
-  }
-}
-
-async function deleteRule(id: string) {
-  showConfirm({
-    title: '删除规则',
-    message: '确定删除该规则？',
-    confirmText: '删除',
-    type: 'warning',
-    onConfirm: async () => {
-      await api.delete(`/rules/${id}`)
-      await loadRules()
-      toast.success('删除成功！')
-    }
-  })
-}
-
 // Initialize
 onMounted(async () => {
   isLoading.value = true
@@ -505,28 +513,110 @@ onMounted(async () => {
     <Header
       :classes="classes"
       :current-class="currentClass"
-      :student-count="students.length"
       :is-guest="isGuest"
       :username="username"
       :batch-mode="batchMode"
-      v-model:search-query="searchQuery"
-      @select-class="selectClass"
-      @create-class="openCreateClassModal"
-      @edit-class="openEditClassModal"
-      @delete-class="handleDeleteClass"
       @add-student="showStudentModal = true"
       @import-students="showImportModal = true"
       @delete-students="showDeleteStudentMode = true; deleteStudentList = []"
-      @start-batch="startBatchMode"
-      @show-records="loadEvaluationRecords(); showRecordsModal = true"
-      @show-rules="showRulesModal = true"
       @login="showAuthModal = true"
       @logout="logout(); loadClasses(); loadRules(); toast.success('已退出登录')"
-      @set-sort="(by, order) => { sortBy = by; sortOrder = order }"
     />
 
     <!-- Main Content -->
     <main class="flex-1 overflow-auto p-6">
+      <!-- 工具栏：班级选择、搜索、排序、批量评价 -->
+      <div v-if="!batchMode" class="mb-4 flex flex-wrap items-center gap-3">
+        <!-- 班级选择（自定义下拉） -->
+        <div class="relative" v-if="classes.length > 0">
+          <button 
+            @click="showClassSelect = !showClassSelect"
+            class="flex items-center gap-2 border-2 border-gray-200 rounded-xl px-4 py-2 text-sm bg-white shadow-sm hover:border-orange-400 transition-colors font-medium"
+          >
+            <span>📚</span>
+            <span>{{ currentClass?.name || '选择班级' }}</span>
+            <span class="text-gray-400">▾</span>
+          </button>
+          <div v-if="showClassSelect" @click="showClassSelect = false" class="fixed inset-0 z-40"></div>
+          <Transition name="dropdown">
+            <div v-if="showClassSelect" class="absolute left-0 top-full mt-1.5 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 w-56 z-50 overflow-hidden">
+              <!-- 班级列表 -->
+              <div class="max-h-48 overflow-auto">
+                <button
+                  v-for="cls in classes"
+                  :key="cls.id"
+                  @click="selectClass(cls); showClassSelect = false"
+                  class="w-full text-left px-4 py-2 text-sm hover:bg-gradient-to-r hover:from-orange-50 hover:to-pink-50 transition-colors flex items-center gap-2"
+                  :class="cls.id === currentClass?.id ? 'bg-orange-50 text-orange-600 font-medium' : ''"
+                >
+                  <span>{{ cls.id === currentClass?.id ? '✓' : '' }}</span>
+                  <span>{{ cls.name }}</span>
+                </button>
+              </div>
+              <!-- 分隔线和管理操作 -->
+              <div class="border-t border-gray-100 mt-1 pt-1">
+                <button @click="showClassSelect = false; openCreateClassModal()" class="w-full text-left px-4 py-2 text-sm hover:bg-gradient-to-r hover:from-orange-50 hover:to-pink-50 transition-colors">➕ 新建班级</button>
+                <button v-if="currentClass" @click="showClassSelect = false; openEditClassModal()" class="w-full text-left px-4 py-2 text-sm hover:bg-gradient-to-r hover:from-orange-50 hover:to-pink-50 transition-colors">✏️ 重命名班级</button>
+                <button v-if="currentClass" @click="showClassSelect = false; handleDeleteClass()" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">🗑️ 删除班级</button>
+              </div>
+            </div>
+          </Transition>
+        </div>
+        <span v-if="students.length > 0" class="text-sm text-gray-500">
+          {{ students.length }} 人
+        </span>
+
+        <!-- 弹性空间，让后面的内容居中 -->
+        <div class="flex-1"></div>
+
+        <!-- 搜索和排序（居中） -->
+        <div v-if="students.length > 0" class="flex items-center gap-3">
+          <!-- 搜索 -->
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="🔍 搜索学生..."
+            class="w-48 border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white shadow-sm focus:outline-none focus:border-orange-400 transition-colors"
+          />
+
+          <!-- 排序按钮组 -->
+          <div class="flex items-center gap-1 bg-white rounded-lg p-1 shadow-sm border border-gray-100">
+            <button 
+              @click="sortBy = 'name'; sortOrder = 'asc'" 
+              class="px-2 py-1 text-xs rounded-md transition-colors"
+              :class="sortBy === 'name' && sortOrder === 'asc' ? 'bg-orange-100 text-orange-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
+            >A-Z</button>
+            <button 
+              @click="sortBy = 'name'; sortOrder = 'desc'" 
+              class="px-2 py-1 text-xs rounded-md transition-colors"
+              :class="sortBy === 'name' && sortOrder === 'desc' ? 'bg-orange-100 text-orange-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
+            >Z-A</button>
+            <button 
+              @click="sortBy = 'studentNo'; sortOrder = 'asc'" 
+              class="px-2 py-1 text-xs rounded-md transition-colors"
+              :class="sortBy === 'studentNo' ? 'bg-orange-100 text-orange-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
+            >学号</button>
+            <button 
+              @click="sortBy = 'progress'; sortOrder = 'desc'" 
+              class="px-2 py-1 text-xs rounded-md transition-colors"
+              :class="sortBy === 'progress' ? 'bg-orange-100 text-orange-600 font-medium' : 'text-gray-500 hover:text-gray-700'"
+            >进度</button>
+          </div>
+        </div>
+
+        <!-- 弹性空间 -->
+        <div class="flex-1"></div>
+
+        <!-- 批量评价按钮 -->
+        <button
+          v-if="students.length > 0"
+          @click="startBatchMode"
+          class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium text-sm shadow-sm hover:bg-gray-50 hover:border-gray-300 transition-all"
+        >
+          ✅ 批量评价
+        </button>
+      </div>
+
       <Transition name="fade" mode="out-in">
         <!-- 无班级状态 -->
         <div v-if="classes.length === 0" key="no-class" class="flex flex-col items-center justify-center min-h-[60vh]">
@@ -589,7 +679,6 @@ onMounted(async () => {
     <EvaluationModal :show="showEvalModal" :student="selectedStudent" :selected-count="selectedStudents.size" :rules="rules" @close="showEvalModal = false" @evaluate="handleEvaluate" />
     <PetModal :show="showPetModal" :student="selectedStudent" @close="showPetModal = false; selectedStudent = null" @select="selectPet" />
     <RecordsModal :show="showRecordsModal" :records="evaluationRecords" :total-records="totalRecords" :page="recordsPage" :total-pages="totalPages" @close="showRecordsModal = false" @undo="handleUndoLastEvaluation" @prev-page="recordsPage--; loadEvaluationRecords()" @next-page="recordsPage++; loadEvaluationRecords()" @go-to-page="recordsPage = $event; loadEvaluationRecords()" />
-    <RulesModal :show="showRulesModal" :rules="rules" @close="showRulesModal = false" @add-rule="addRule" @delete-rule="deleteRule" />
     <DetailPanel :show="showDetailPanel" :student="detailStudent" :rules="rules" :student-records="studentRecords" @close="closeDetailPanel" @change-pet="showDetailPanel = false; selectedStudent = detailStudent; showPetModal = true" @evaluate="handleDetailEvaluate" />
     <ConfirmDialog :show="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message" :confirm-text="confirmDialog.confirmText" :cancel-text="confirmDialog.cancelText" :type="confirmDialog.type" @confirm="confirmDialog.onConfirm" @cancel="closeConfirm" />
     <AuthModal :show="showAuthModal" @close="showAuthModal = false" @login="toast.success(`欢迎，${$event.username}！`); loadClasses(); loadRules()" />
