@@ -184,26 +184,6 @@ GET    /api/health               # 健康检查
 
 ---
 
-## 💾 数据备份
-
-使用独立的 [Git Backup](https://github.com/gaotong132/backups) 项目进行自动备份：
-
-- 每天自动备份数据库
-- 保留最近 10 个备份
-- 自动推送到 GitHub 私有仓库
-
-手动备份：
-```bash
-cd /root/.openclaw/workspace/projects/git-backup
-python3 backup.py backup --force
-```
-
-通过 API 导出 JSON 格式：
-- `GET /api/backup` - 下载完整数据
-- `POST /api/backup` - 恢复数据
-
----
-
 ## 🧪 测试
 
 ```bash
