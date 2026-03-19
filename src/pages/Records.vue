@@ -113,6 +113,8 @@ async function undoRecord(recordId: string) {
         await api.delete(`/evaluations/${recordId}`)
         toast.success('已撤回')
         selectedIds.value.delete(recordId)
+        // 通知其他页面数据已变更
+        localStorage.setItem('pet-garden-data-version', Date.now().toString())
         loadRecords()
       } catch (error) {
         toast.error('撤回失败')
@@ -141,6 +143,8 @@ async function undoSelected() {
       }
       toast.success(`已撤回 ${successCount} 条评价`)
       selectedIds.value.clear()
+      // 通知其他页面数据已变更
+      localStorage.setItem('pet-garden-data-version', Date.now().toString())
       loadRecords()
     }
   })

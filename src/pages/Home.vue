@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onActivated, nextTick } from 'vue'
 import type { Student, Class, Rule, EvaluationRecord } from '@/types'
 import { useAuth, setGlobalErrorHandler } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
@@ -52,6 +52,17 @@ function handleSortChange() {
 }
 const isLoading = ref(true)
 const isLoaded = ref(false)
+
+// 数据版本控制（用于判断是否需要刷新）
+const lastDataVersion = ref<number>(0)
+
+function getDataVersion(): number {
+  return parseInt(localStorage.getItem('pet-garden-data-version') || '0', 10)
+}
+
+function touchDataVersion() {
+  localStorage.setItem('pet-garden-data-version', Date.now().toString())
+}
 
 // Modal states
 const showClassModal = ref(false)
@@ -487,9 +498,19 @@ onMounted(async () => {
   try {
     await loadClasses()
     await loadRules()
+    lastDataVersion.value = getDataVersion()
   } finally {
     isLoading.value = false
     nextTick(() => { isLoaded.value = true })
+  }
+})
+
+onActivated(() => {
+  // 检测数据版本是否变化（其他页面修改了数据）
+  const currentVersion = getDataVersion()
+  if (currentVersion > lastDataVersion.value) {
+    lastDataVersion.value = currentVersion
+    loadStudents()
   }
 })
 </script>

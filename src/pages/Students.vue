@@ -143,6 +143,7 @@ async function addStudent() {
     newStudentName.value = ''
     newStudentNo.value = ''
     showAddForm.value = false
+    localStorage.setItem('pet-garden-data-version', Date.now().toString())
     loadStudents()
   } catch (error) {
     toast.error('添加失败')
@@ -169,6 +170,7 @@ async function saveEdit() {
     })
     toast.success('保存成功')
     editingStudent.value = null
+    localStorage.setItem('pet-garden-data-version', Date.now().toString())
     loadStudents()
   } catch (error) {
     toast.error('保存失败')
@@ -187,6 +189,7 @@ async function deleteStudent(id: string) {
         await api.delete(`/students/${id}`)
         toast.success('删除成功')
         selectedIds.value.delete(id)
+        localStorage.setItem('pet-garden-data-version', Date.now().toString())
         loadStudents()
       } catch (error) {
         toast.error('删除失败')
@@ -210,6 +213,7 @@ async function deleteSelected() {
         })
         toast.success(`已删除 ${selectedIds.value.size} 名学生`)
         selectedIds.value.clear()
+        localStorage.setItem('pet-garden-data-version', Date.now().toString())
         loadStudents()
       } catch (error) {
         toast.error('删除失败')
@@ -244,6 +248,7 @@ async function importStudents() {
     toast.success(`成功导入 ${data.length} 名学生`)
     importText.value = ''
     showImportForm.value = false
+    localStorage.setItem('pet-garden-data-version', Date.now().toString())
     loadStudents()
   } catch (error) {
     toast.error('导入失败')
