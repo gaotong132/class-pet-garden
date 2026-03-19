@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Class } from '@/types'
 
-const props = defineProps<{
+defineProps<{
   classes: Class[]
   currentClass: Class | null
   isGuest: boolean
@@ -11,7 +11,7 @@ const props = defineProps<{
   batchMode: boolean
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   login: []
   logout: []
 }>()

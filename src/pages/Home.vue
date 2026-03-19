@@ -43,13 +43,6 @@ const rules = ref<Rule[]>([])
 const searchQuery = ref('')
 const sortBy = ref<'name' | 'studentNo' | 'progress'>('name')
 const sortOrder = ref<'asc' | 'desc'>('asc')
-const sortType = ref('name-asc')
-
-function handleSortChange() {
-  const [by, order] = sortType.value.split('-')
-  sortBy.value = by as 'name' | 'studentNo' | 'progress'
-  sortOrder.value = order as 'asc' | 'desc'
-}
 const isLoading = ref(true)
 const isLoaded = ref(false)
 
@@ -58,10 +51,6 @@ const lastDataVersion = ref<number>(0)
 
 function getDataVersion(): number {
   return parseInt(localStorage.getItem('pet-garden-data-version') || '0', 10)
-}
-
-function touchDataVersion() {
-  localStorage.setItem('pet-garden-data-version', Date.now().toString())
 }
 
 // Modal states

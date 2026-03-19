@@ -124,10 +124,6 @@ function toggleSelectAll() {
   }
 }
 
-function clearSelection() {
-  selectedIds.value.clear()
-}
-
 // 新增学生
 async function addStudent() {
   if (!newStudentName.value.trim()) {

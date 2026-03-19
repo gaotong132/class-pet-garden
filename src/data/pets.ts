@@ -77,10 +77,10 @@ export function getPetLevelImage(petId: string, level: number): string {
 }
 
 // 死亡阈值
-export const DEATH_THRESHOLD = -50
+export const DEATH_THRESHOLD = -20
 
 // 检查宠物状态
-export function checkPetStatus(totalPoints: number, currentStatus: string): 'alive' | 'dead' {
+export function checkPetStatus(totalPoints: number, _currentStatus?: string): 'alive' | 'dead' {
   if (totalPoints < DEATH_THRESHOLD) {
     return 'dead'
   }
@@ -90,6 +90,11 @@ export function checkPetStatus(totalPoints: number, currentStatus: string): 'ali
 // 获取死亡宠物图片（墓碑）
 export function getDeadPetImage(): string {
   return '/pet-garden/dead.svg'
+}
+
+// 获取宠物等级1的图片（用于选择列表展示）
+export function getPetLevel1Image(petId: string): string {
+  return getPetLevelImage(petId, 1)
 }
 
 // 计算等级

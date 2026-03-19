@@ -97,10 +97,6 @@ function toggleSelectAll() {
   }
 }
 
-function clearSelection() {
-  selectedIds.value.clear()
-}
-
 // 撤回单条记录
 async function undoRecord(recordId: string) {
   showConfirm({

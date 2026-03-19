@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import type { Rule } from '@/types'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
   rules: Rule[]
 }>()

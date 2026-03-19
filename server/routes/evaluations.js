@@ -7,7 +7,7 @@ import { calculateLevel } from '../utils/level.js'
 const router = Router()
 
 // 死亡阈值：积分低于此值宠物死亡
-const DEATH_THRESHOLD = -50
+const DEATH_THRESHOLD = -20
 
 // 检查宠物状态
 function checkPetStatus(totalPoints, currentStatus) {
