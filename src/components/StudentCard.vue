@@ -56,25 +56,25 @@ function getStatusInfo(student: Student) {
   const status = getPetStatus(student)
   if (status === 'dead') {
     // 复活需要积分 >= 0
-    const pointsNeeded = -student.total_points
+    const pointsNeeded = Math.max(0, -student.total_points)
     return {
       emoji: '💀',
       text: '已死亡',
       bgClass: 'bg-gray-600',
       cardClass: 'opacity-75 grayscale-[30%]',
       progressColor: 'from-gray-400 to-gray-500',
-      statusText: `距离复活还需 ${pointsNeeded} 分`
+      statusText: pointsNeeded > 0 ? `距离复活还需 ${pointsNeeded} 分` : '即将复活！'
     }
   }
   if (status === 'injured') {
-    const pointsNeeded = -student.total_points
+    const pointsNeeded = Math.max(0, -student.total_points)
     return {
       emoji: '🩹',
       text: '受伤中',
       bgClass: 'bg-orange-500',
       cardClass: 'opacity-90',
       progressColor: 'from-orange-400 to-red-400',
-      statusText: `还差 ${pointsNeeded} 分恢复`
+      statusText: pointsNeeded > 0 ? `还差 ${pointsNeeded} 分恢复` : '即将恢复！'
     }
   }
   return {

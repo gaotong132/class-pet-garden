@@ -128,7 +128,10 @@ router.get('/', authMiddleware, (req, res) => {
   let rules = db.prepare(`
     SELECT * FROM evaluation_rules
     WHERE user_id = ?
-    ORDER BY created_at DESC, category, points DESC
+    ORDER BY 
+      CASE WHEN points > 0 THEN 0 ELSE 1 END,
+      points DESC,
+      created_at DESC
   `).all(req.userId)
   
   // 新用户自动初始化默认规则
@@ -137,7 +140,10 @@ router.get('/', authMiddleware, (req, res) => {
     rules = db.prepare(`
       SELECT * FROM evaluation_rules
       WHERE user_id = ?
-      ORDER BY created_at DESC, category, points DESC
+      ORDER BY 
+        CASE WHEN points > 0 THEN 0 ELSE 1 END,
+        points DESC,
+        created_at DESC
     `).all(req.userId)
   }
   
