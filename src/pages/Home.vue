@@ -517,6 +517,8 @@ onActivated(() => {
     lastDataVersion.value = currentVersion
     loadStudents()
   }
+  // 刷新规则（可能在规则管理页面添加了新规则）
+  loadRules()
 })
 </script>
 
