@@ -18,7 +18,7 @@ const isLoading = ref(true)
 
 // 分页
 const page = ref(1)
-const pageSize = 30
+const pageSize = 20
 const totalRecords = ref(0)
 const totalPages = computed(() => Math.ceil(totalRecords.value / pageSize))
 
