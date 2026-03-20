@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import type { Student, Rule, EvaluationRecord } from '@/types'
 import { getPetType, getLevelProgress, getPetLevelImage, calculateLevel } from '@/data/pets'
-import { useAuth } from '@/composables/useAuth'
-
-interface FrequentRule {
-  name: string
-  points: number
-  category: string
-  use_count: number
-}
+import QuickEvalSection from './QuickEvalSection.vue'
 
 const props = defineProps<{
   show: boolean
@@ -24,39 +17,7 @@ defineEmits<{
   evaluate: [rule: Rule]
 }>()
 
-const { api } = useAuth()
-
-const detailEvalTab = ref('常用')
-const categories = ['常用', '学习', '行为', '健康', '其他']
-const frequentRules = ref<FrequentRule[]>([])
-
-const currentCategoryRules = computed(() => {
-  if (detailEvalTab.value === '常用') {
-    return frequentRules.value.map(r => ({
-      id: `freq-${r.name}-${r.points}`,
-      name: r.name,
-      points: r.points,
-      category: r.category
-    }))
-  }
-  return props.rules.filter(r => r.category === detailEvalTab.value)
-})
-
-async function loadFrequentRules() {
-  try {
-    const res = await api.get('/rules/frequent')
-    frequentRules.value = res.data.rules || []
-    if (frequentRules.value.length > 0) {
-      detailEvalTab.value = '常用'
-    } else {
-      detailEvalTab.value = '学习'
-    }
-  } catch (error) {
-    console.error('加载常用规则失败:', error)
-    frequentRules.value = []
-    detailEvalTab.value = '学习'
-  }
-}
+const quickEvalRef = ref<InstanceType<typeof QuickEvalSection> | null>(null)
 
 function getDisplayLevel(student: Student): number {
   return calculateLevel(student.pet_exp)
@@ -73,7 +34,7 @@ function formatDate(timestamp: number) {
 
 watch(() => props.show, async (show) => {
   if (show) {
-    await loadFrequentRules()
+    quickEvalRef.value?.loadFrequentRules()
   }
 })
 </script>
@@ -132,55 +93,12 @@ watch(() => props.show, async (show) => {
           </div>
         </div>
 
-        <!-- 快速评分 -->
-        <div class="p-6 border-b border-gray-100">
-          <h4 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
-            <span>⚡</span> 快速评价
-          </h4>
-          <!-- 分类标签 -->
-          <div class="flex gap-2 mb-4 flex-wrap">
-            <button
-              v-for="cat in categories"
-              :key="cat"
-              @click="detailEvalTab = cat"
-              class="px-4 py-1.5 rounded-xl text-sm font-bold transition-all"
-              :class="detailEvalTab === cat
-                ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-            >
-              {{ cat }}
-              <span v-if="cat === '常用' && frequentRules.length > 0" class="ml-1 text-xs opacity-75">({{ frequentRules.length }})</span>
-            </button>
-          </div>
-          <!-- 规则按钮 -->
-          <div class="h-[400px] overflow-y-auto pr-1 custom-scrollbar">
-            <!-- 常用规则空状态 -->
-            <div v-if="detailEvalTab === '常用' && frequentRules.length === 0" class="text-center py-16 text-gray-500">
-              <div class="text-4xl mb-3">📊</div>
-              <p>暂无常用规则</p>
-              <p class="text-xs mt-1 text-gray-400">使用评价后会自动记录</p>
-            </div>
-            <div v-else class="grid grid-cols-5 gap-2 content-start">
-              <button
-                v-for="rule in currentCategoryRules"
-                :key="rule.id"
-                @click="$emit('evaluate', rule)"
-                class="rounded-xl p-2 text-center transition-all border-2 hover:scale-105 active:scale-95 h-[70px]"
-                :class="rule.points > 0
-                  ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:border-green-400'
-                  : 'bg-gradient-to-br from-red-50 to-pink-50 border-red-200 hover:border-red-400'"
-              >
-                <div
-                  class="text-base font-bold"
-                  :class="rule.points > 0 ? 'text-green-500' : 'text-red-500'"
-                >
-                  {{ rule.points > 0 ? '+' : '' }}{{ rule.points }}
-                </div>
-                <div class="text-xs text-gray-600 leading-tight line-clamp-2">{{ rule.name }}</div>
-              </button>
-            </div>
-          </div>
-        </div>
+        <!-- 快速评价（复用组件） -->
+        <QuickEvalSection
+          ref="quickEvalRef"
+          :rules="rules"
+          @evaluate="$emit('evaluate', $event)"
+        />
 
         <!-- 最近记录 -->
         <div class="p-6">

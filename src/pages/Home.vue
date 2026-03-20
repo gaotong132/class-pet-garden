@@ -146,7 +146,6 @@ const filteredStudents = computed(() => {
   return result
 })
 
-const selectedEvalTab = ref('学习')
 const detailEvalTab = ref('学习')
 
 // API functions
@@ -798,8 +797,8 @@ onActivated(() => {
         v-if="batchMode"
         :selected-count="selectedStudents.size"
         mode="batch"
-        @add-points="selectedEvalTab = '学习'; selectedStudent = null; showEvalModal = true"
-        @sub-points="selectedEvalTab = '行为'; selectedStudent = null; showEvalModal = true"
+        @add-points="selectedStudent = null; showEvalModal = true"
+        @sub-points="selectedStudent = null; showEvalModal = true"
       />
 
       <BatchActionBar
@@ -815,7 +814,7 @@ onActivated(() => {
     <ClassModal :show="showClassModal" :editing="editingClass" @close="showClassModal = false; editingClass = null" @submit="editingClass ? updateClass($event) : createClass($event)" />
     <StudentModal :show="showStudentModal" @close="showStudentModal = false" @submit="addStudent" />
     <ImportModal :show="showImportModal" @close="showImportModal = false" @submit="importStudents" />
-    <EvaluationModal :show="showEvalModal" :student="selectedStudent" :selected-count="selectedStudents.size" :rules="rules" @close="showEvalModal = false" @evaluate="handleEvaluate" />
+    <EvaluationModal :show="showEvalModal" :selected-count="selectedStudents.size" :rules="rules" @close="showEvalModal = false" @evaluate="handleEvaluate" />
     <PetModal :show="showPetModal" :student="selectedStudent" @close="showPetModal = false; selectedStudent = null" @select="selectPet" />
     <RecordsModal :show="showRecordsModal" :records="evaluationRecords" :total-records="totalRecords" :page="recordsPage" :total-pages="totalPages" @close="showRecordsModal = false" @undo="handleUndoLastEvaluation" @prev-page="recordsPage--; loadEvaluationRecords()" @next-page="recordsPage++; loadEvaluationRecords()" @go-to-page="recordsPage = $event; loadEvaluationRecords()" />
     <DetailPanel :show="showDetailPanel" :student="detailStudent" :rules="rules" :student-records="studentRecords" @close="closeDetailPanel" @change-pet="showDetailPanel = false; selectedStudent = detailStudent; showPetModal = true" @evaluate="handleDetailEvaluate" />
