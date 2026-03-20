@@ -86,6 +86,16 @@ const totalPages = ref(0)
 // Score animations
 const scoreAnimations = ref<Map<string, { points: number; show: boolean }>>(new Map())
 
+// 标签过滤
+interface Tag {
+  id: string
+  name: string
+  color: string
+}
+const allTags = ref<Tag[]>([])
+const selectedTagFilter = ref<Tag | null>(null)
+const showTagFilter = ref(false)
+
 // 辅助函数：获取拼音首字母
 function getPinyinInitials(text: string): string {
   return pinyin(text, { pattern: 'first', toneType: 'none' }).replace(/\s/g, '').toLowerCase()
@@ -99,23 +109,25 @@ function getPinyinFull(text: string): string {
 // Computed
 const filteredStudents = computed(() => {
   let result = [...students.value]
+  
+  // 标签过滤
+  if (selectedTagFilter.value) {
+    result = result.filter(s => {
+      const studentTags = (s as any).tags || []
+      return studentTags.some((t: Tag) => t.id === selectedTagFilter.value!.id)
+    })
+  }
+  
+  // 搜索过滤
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase().trim()
     result = result.filter(s => {
-      // 1. 姓名匹配
       if (s.name.toLowerCase().includes(query)) return true
-      
-      // 2. 学号匹配
       if (s.student_no && s.student_no.toLowerCase().includes(query)) return true
-      
-      // 3. 拼音首字母匹配（如 "cxm" 匹配 "陈小明"）
       const initials = getPinyinInitials(s.name)
       if (initials.includes(query)) return true
-      
-      // 4. 完整拼音匹配
       const fullPinyin = getPinyinFull(s.name)
       if (fullPinyin.includes(query)) return true
-      
       return false
     })
   }
@@ -173,6 +185,15 @@ async function loadStudents() {
 async function loadRules() {
   const res = await api.get('/rules')
   rules.value = res.data.rules
+}
+
+async function loadTags() {
+  try {
+    const res = await api.get('/tags')
+    allTags.value = res.data.tags
+  } catch (error) {
+    console.error('加载标签失败:', error)
+  }
 }
 
 // Class actions
@@ -526,6 +547,7 @@ onMounted(async () => {
   try {
     await loadClasses()
     await loadRules()
+    await loadTags()
     lastDataVersion.value = getDataVersion()
   } finally {
     isLoading.value = false
@@ -542,6 +564,8 @@ onActivated(() => {
   }
   // 刷新规则（可能在规则管理页面添加了新规则）
   loadRules()
+  // 刷新标签
+  loadTags()
 })
 </script>
 
@@ -635,6 +659,41 @@ onActivated(() => {
             placeholder="🔍 搜索学生..."
             class="w-48 border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white shadow-sm focus:outline-none focus:border-orange-400 transition-colors"
           />
+
+          <!-- 标签过滤 -->
+          <div v-if="allTags.length > 0" class="relative">
+            <button
+              @click="showTagFilter = !showTagFilter"
+              class="flex items-center gap-1.5 border-2 border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white shadow-sm hover:border-orange-400 transition-colors"
+              :class="selectedTagFilter ? 'border-orange-400 text-orange-600' : 'text-gray-600'"
+            >
+              <span>🏷️</span>
+              <span>{{ selectedTagFilter?.name || '标签' }}</span>
+              <span class="text-gray-400 text-xs">▾</span>
+            </button>
+            <div v-if="showTagFilter" @click="showTagFilter = false" class="fixed inset-0 z-40"></div>
+            <Transition name="dropdown">
+              <div v-if="showTagFilter" class="absolute left-0 top-full mt-1.5 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 w-36 z-50 overflow-hidden">
+                <button
+                  v-if="selectedTagFilter"
+                  @click="selectedTagFilter = null; showTagFilter = false"
+                  class="w-full text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+                >
+                  ✕ 清除筛选
+                </button>
+                <button
+                  v-for="tag in allTags"
+                  :key="tag.id"
+                  @click="selectedTagFilter = tag; showTagFilter = false"
+                  class="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  :class="selectedTagFilter?.id === tag.id ? 'bg-orange-50 text-orange-600 font-medium' : ''"
+                >
+                  <span class="w-3 h-3 rounded-full" :style="{ backgroundColor: tag.color }"></span>
+                  {{ tag.name }}
+                </button>
+              </div>
+            </Transition>
+          </div>
 
           <!-- 排序按钮组 -->
           <div class="flex items-center gap-1 bg-white rounded-lg p-1 shadow-sm border border-gray-100">

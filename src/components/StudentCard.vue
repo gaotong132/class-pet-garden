@@ -3,8 +3,18 @@ import type { Student } from '@/types'
 import { getPetType, getLevelProgress, getPetLevelImage, calculateLevel, DEATH_THRESHOLD, checkPetStatus } from '@/data/pets'
 import PetImage from './PetImage.vue'
 
+interface Tag {
+  id: string
+  name: string
+  color: string
+}
+
+interface StudentWithTags extends Student {
+  tags?: Tag[]
+}
+
 defineProps<{
-  student: Student
+  student: StudentWithTags
   isSelected?: boolean
   isDeleteMode?: boolean
   isDeleteSelected?: boolean
@@ -47,61 +57,39 @@ function getStudentPetImage(student: Student): string {
 }
 
 function getPetStatus(student: Student): 'alive' | 'injured' | 'dead' {
-  // 使用前端计算的状态（与后端逻辑一致）
-  // 这样可以保证状态实时正确
   return checkPetStatus(student.total_points, student.pet_status)
 }
 
 function getStatusInfo(student: Student) {
   const status = getPetStatus(student)
   if (status === 'dead') {
-    // 复活需要积分 >= 0
-    const pointsNeeded = Math.max(0, -student.total_points)
     return {
       emoji: '💀',
       text: '已死亡',
-      bgClass: 'bg-gray-600',
       cardClass: 'opacity-75 grayscale-[30%]',
-      progressColor: 'from-gray-400 to-gray-500',
-      statusText: pointsNeeded > 0 ? `距离复活还需 ${pointsNeeded} 分` : '即将复活！'
     }
   }
   if (status === 'injured') {
-    const pointsNeeded = Math.max(0, -student.total_points)
     return {
       emoji: '🩹',
       text: '受伤中',
-      bgClass: 'bg-orange-500',
       cardClass: 'opacity-90',
-      progressColor: 'from-orange-400 to-red-400',
-      statusText: pointsNeeded > 0 ? `还差 ${pointsNeeded} 分恢复` : '即将恢复！'
     }
   }
   return {
     emoji: null,
     text: null,
-    bgClass: null,
     cardClass: '',
-    progressColor: null,
-    statusText: null
   }
 }
 
-// 计算复活/恢复进度
 function getHealthProgress(student: Student): number {
   const status = getPetStatus(student)
   if (status === 'dead') {
-    // 死亡状态下，从 DEATH_THRESHOLD 到 0 的进度
-    // 例如：积分 -30，阈值 -20，进度 = (-30 - (-20)) / (0 - (-20)) = -10 / 20 = 0
-    // 积分 -20，进度 = 0
-    // 积分 -10，进度 = (-10 - (-20)) / 20 = 10/20 = 50%
-    // 积分 0，进度 = 100%
     const progress = (student.total_points - DEATH_THRESHOLD) / (-DEATH_THRESHOLD) * 100
     return Math.min(100, Math.max(0, progress))
   }
   if (status === 'injured') {
-    // 受伤状态下，从 0 到恢复的进度
-    // 积分 -10，进度 = (0 - (-10)) / 20 = 10/20 = 50%
     const progress = (0 - student.total_points) / (-DEATH_THRESHOLD) * 100
     return Math.min(100, Math.max(0, progress))
   }
@@ -166,7 +154,7 @@ function getHealthProgress(student: Student): number {
            'bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100') 
         : 'bg-gradient-to-br from-gray-100 via-slate-50 to-gray-100'"
     >
-      <!-- 有宠物时使用 PetImage 组件 -->
+      <!-- 有宠物时 -->
       <template v-if="student.pet_type">
         <div class="w-full h-full overflow-hidden" style="border-radius: 14px 14px 0 0; margin: -1px -1px 0 -1px; width: calc(100% + 2px);">
           <PetImage
@@ -187,6 +175,18 @@ function getHealthProgress(student: Student): number {
         >
           🩹
         </div>
+        
+        <!-- 宠物名称（右上角） -->
+        <div class="absolute top-2 right-2 flex flex-col items-end gap-1">
+          <span class="text-xs px-2 py-0.5 rounded-full shadow-md text-white font-medium backdrop-blur-sm"
+            :class="getPetStatus(student) === 'dead' 
+              ? 'bg-gray-600/80' 
+              : getPetStatus(student) === 'injured'
+              ? 'bg-orange-500/80'
+              : 'bg-black/40'">
+            {{ getPetType(student.pet_type)?.name }}
+          </span>
+        </div>
       </template>
       <!-- 未领养宠物 -->
       <div v-else class="flex flex-col items-center">
@@ -194,7 +194,7 @@ function getHealthProgress(student: Student): number {
         <span class="text-xs text-gray-400 mt-2 group-hover:text-orange-400 transition-colors">点击领养</span>
       </div>
 
-      <!-- 状态徽章 -->
+      <!-- 状态徽章（右下角） -->
       <div
         v-if="getPetStatus(student) === 'dead'"
         class="absolute bottom-3 right-3 font-bold px-3 py-1 rounded-full shadow-lg bg-gray-600 text-white text-sm"
@@ -219,18 +219,16 @@ function getHealthProgress(student: Student): number {
 
     <!-- 信息区域 -->
     <div class="p-4">
-      <!-- 学生姓名 + 宠物名 -->
-      <div class="flex items-center justify-between mb-2">
+      <!-- 学生姓名 + 标签 -->
+      <div class="flex items-center gap-1.5 mb-2 flex-wrap">
         <span class="font-bold text-lg text-gray-800 group-hover:text-orange-500 transition-colors">{{ student.name }}</span>
-        <span class="text-xs px-2 py-1 rounded-full"
-          :class="getPetStatus(student) === 'dead' 
-            ? 'bg-gray-200 text-gray-500' 
-            : getPetStatus(student) === 'injured'
-            ? 'bg-orange-100 text-orange-600'
-            : (student.pet_type ? 'bg-gradient-to-r from-orange-100 to-pink-100 text-orange-600' : 'bg-gray-100 text-gray-400')">
-          {{ getPetStatus(student) === 'dead' ? '💀 已死亡' : 
-             getPetStatus(student) === 'injured' ? '🩹 受伤中' :
-             (student.pet_type ? getPetType(student.pet_type)?.name : '未领养') }}
+        <span
+          v-for="tag in (student.tags || [])"
+          :key="tag.id"
+          class="text-xs px-1.5 py-0.5 rounded-full text-white font-medium"
+          :style="{ backgroundColor: tag.color }"
+        >
+          {{ tag.name }}
         </span>
       </div>
 
