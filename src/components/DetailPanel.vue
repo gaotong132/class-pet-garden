@@ -26,7 +26,7 @@ defineEmits<{
 
 const { api } = useAuth()
 
-const detailEvalTab = ref('学习')
+const detailEvalTab = ref('常用')
 const categories = ['常用', '学习', '行为', '健康', '其他']
 const frequentRules = ref<FrequentRule[]>([])
 

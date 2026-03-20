@@ -24,8 +24,8 @@ const emit = defineEmits<{
 
 const { api } = useAuth()
 
-const selectedTab = ref('学习')
-const categories = ['学习', '行为', '健康', '其他', '常用']
+const selectedTab = ref('常用')
+const categories = ['常用', '学习', '行为', '健康', '其他']
 const frequentRules = ref<FrequentRule[]>([])
 
 const currentCategoryRules = computed(() => {
@@ -57,11 +57,8 @@ async function loadFrequentRules() {
 watch(() => props.show, async (show) => {
   if (show) {
     await loadFrequentRules()
-    // loadFrequentRules 已经根据结果设置了 selectedTab
-    // 如果没有常用规则，默认选中学习
-    if (selectedTab.value !== '常用') {
-      selectedTab.value = '学习'
-    }
+    // 默认选中常用标签
+    selectedTab.value = '常用'
   }
 })
 
