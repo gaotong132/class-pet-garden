@@ -234,4 +234,23 @@ router.delete('/:id', authMiddleware, (req, res) => {
   res.json({ success: true })
 })
 
+// 获取用户最常用的规则（从评价记录统计）
+router.get('/frequent', authMiddleware, (req, res) => {
+  // 从评价记录中统计每个规则的使用次数
+  const frequentRules = db.prepare(`
+    SELECT 
+      reason as name,
+      points,
+      category,
+      COUNT(*) as use_count
+    FROM evaluation_records
+    WHERE user_id = ?
+    GROUP BY reason, points, category
+    ORDER BY use_count DESC
+    LIMIT 25
+  `).all(req.userId)
+
+  res.json({ rules: frequentRules })
+})
+
 export default router

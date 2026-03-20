@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { Rule, Student } from '@/types'
+import { useAuth } from '@/composables/useAuth'
+
+interface FrequentRule {
+  name: string
+  points: number
+  category: string
+  use_count: number
+}
 
 const props = defineProps<{
   show: boolean
@@ -14,16 +22,38 @@ const emit = defineEmits<{
   evaluate: [rule: Rule]
 }>()
 
+const { api } = useAuth()
+
 const selectedTab = ref('学习')
-const categories = ['学习', '行为', '健康', '其他']
+const categories = ['学习', '行为', '健康', '其他', '常用']
+const frequentRules = ref<FrequentRule[]>([])
 
 const currentCategoryRules = computed(() => {
+  if (selectedTab.value === '常用') {
+    return frequentRules.value.map(r => ({
+      id: `freq-${r.name}-${r.points}`,
+      name: r.name,
+      points: r.points,
+      category: r.category
+    }))
+  }
   return props.rules.filter(r => r.category === selectedTab.value)
 })
+
+async function loadFrequentRules() {
+  try {
+    const res = await api.get('/rules/frequent')
+    frequentRules.value = res.data.rules || []
+  } catch (error) {
+    console.error('加载常用规则失败:', error)
+    frequentRules.value = []
+  }
+}
 
 watch(() => props.show, (show) => {
   if (show) {
     selectedTab.value = '学习'
+    loadFrequentRules()
   }
 })
 
@@ -62,11 +92,19 @@ function close() {
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
           >
             {{ cat }}
+            <span v-if="cat === '常用' && frequentRules.length > 0" class="ml-1 text-xs opacity-75">({{ frequentRules.length }})</span>
           </button>
         </div>
 
+        <!-- 常用规则空状态 -->
+        <div v-if="selectedTab === '常用' && frequentRules.length === 0" class="text-center py-16 text-gray-500">
+          <div class="text-5xl mb-4">📊</div>
+          <p>暂无常用规则</p>
+          <p class="text-sm mt-2 text-gray-400">使用评价后会自动记录常用规则</p>
+        </div>
+
         <!-- 规则网格 -->
-        <div class="h-[590px] overflow-y-auto pr-2 custom-scrollbar">
+        <div v-else class="h-[590px] overflow-y-auto pr-2 custom-scrollbar">
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3 content-start">
             <button
               v-for="rule in currentCategoryRules"

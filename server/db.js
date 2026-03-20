@@ -111,4 +111,11 @@ export function initDb() {
   } catch (e) {
     // 字段已存在，忽略错误
   }
+
+  // 迁移：添加 user_id 到 evaluation_records（如果不存在）
+  try {
+    db.exec(`ALTER TABLE evaluation_records ADD COLUMN user_id TEXT`)
+  } catch (e) {
+    // 字段已存在，忽略错误
+  }
 }

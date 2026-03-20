@@ -60,8 +60,8 @@ router.post('/', authMiddleware, (req, res) => {
   const now = Date.now()
 
   // Insert record
-  db.prepare('INSERT INTO evaluation_records (id, class_id, student_id, points, reason, category, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(id, classId, studentId, points, reason, category, now)
+  db.prepare('INSERT INTO evaluation_records (id, class_id, student_id, points, reason, category, timestamp, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(id, classId, studentId, points, reason, category, now, req.userId)
 
   // Update student points
   db.prepare('UPDATE students SET total_points = total_points + ? WHERE id = ?').run(points, studentId)
