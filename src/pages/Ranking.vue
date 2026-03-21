@@ -4,9 +4,9 @@ import type { Student } from '@/types'
 import { useClasses } from '@/composables/useClasses'
 import { useStudents } from '@/composables/useStudents'
 import { getPetLevelImage } from '@/data/pets'
-import Header from '@/components/layout/Header.vue'
+import PageLayout from '@/components/layout/PageLayout.vue'
 
-const { currentClass, syncCurrentClass } = useClasses()
+const { currentClass } = useClasses()
 const { students, isLoading, loadStudents, getDisplayLevel } = useStudents()
 
 // 按积分排序的排行榜
@@ -36,15 +36,12 @@ function getStudentPetImage(student: Student): string {
 }
 
 onActivated(() => {
-  syncCurrentClass()
   loadStudents()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
-    <Header />
-    
+  <PageLayout content-class="ranking-page">
     <div class="flex-1 ranking-page p-6">
       <!-- 加载中 -->
       <div v-if="isLoading" class="flex items-center justify-center py-32">
@@ -201,7 +198,7 @@ onActivated(() => {
         </div>
       </template>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>

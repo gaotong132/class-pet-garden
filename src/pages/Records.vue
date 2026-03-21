@@ -6,10 +6,10 @@ import { useClasses } from '@/composables/useClasses'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import Header from '@/components/layout/Header.vue'
+import PageLayout from '@/components/layout/PageLayout.vue'
 
 const { api } = useAuth()
-const { currentClass, syncCurrentClass } = useClasses()
+const { currentClass } = useClasses()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 
@@ -148,16 +148,13 @@ onMounted(async () => {
 })
 
 onActivated(() => {
-  syncCurrentClass()
+  // 班级同步由 PageLayout 处理
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
-    <Header />
-
-    <main class="flex-1 p-6">
-      <div class="max-w-5xl mx-auto">
+  <PageLayout>
+    <div class="max-w-5xl mx-auto">
         <!-- 头部 -->
         <div class="flex items-center justify-between mb-6">
           <div>
@@ -319,17 +316,16 @@ onActivated(() => {
           </button>
         </div>
       </div>
-    </main>
 
-    <ConfirmDialog 
-      :show="confirmDialog.show" 
-      :title="confirmDialog.title" 
-      :message="confirmDialog.message" 
-      :confirm-text="confirmDialog.confirmText" 
-      :cancel-text="confirmDialog.cancelText" 
-      :type="confirmDialog.type" 
-      @confirm="confirmDialog.onConfirm" 
-      @cancel="closeConfirm" 
+    <ConfirmDialog
+      :show="confirmDialog.show"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :confirm-text="confirmDialog.confirmText"
+      :cancel-text="confirmDialog.cancelText"
+      :type="confirmDialog.type"
+      @confirm="confirmDialog.onConfirm"
+      @cancel="closeConfirm"
     />
-  </div>
+  </PageLayout>
 </template>

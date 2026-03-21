@@ -5,7 +5,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import Header from '@/components/layout/Header.vue'
+import PageLayout from '@/components/layout/PageLayout.vue'
 
 interface Tag { id: string; name: string; color: string }
 
@@ -87,9 +87,8 @@ onMounted(async () => { isLoading.value = true; try { await Promise.all([loadRul
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
-    <Header />
-    <main class="flex-1 max-w-4xl mx-auto p-6 w-full">
+  <PageLayout>
+    <div class="max-w-4xl mx-auto w-full">
       <div v-if="isLoading" class="flex items-center justify-center py-20"><div class="text-center"><div class="text-6xl animate-bounce mb-4">⚙️</div><div class="text-gray-500">加载中...</div></div></div>
       <template v-else>
         <div class="flex gap-2 mb-6">
@@ -166,7 +165,7 @@ onMounted(async () => { isLoading.value = true; try { await Promise.all([loadRul
           <div v-if="tags.length === 0" class="text-center py-12 text-gray-500 bg-white rounded-2xl shadow-lg"><div class="text-5xl mb-4">🏷️</div>暂无标签，添加标签用于给学生分类标记</div>
         </template>
       </template>
-    </main>
+    </div>
     <ConfirmDialog :show="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message" :confirm-text="confirmDialog.confirmText" :cancel-text="confirmDialog.cancelText" :type="confirmDialog.type" @confirm="confirmDialog.onConfirm" @cancel="closeConfirm" />
-  </div>
+  </PageLayout>
 </template>

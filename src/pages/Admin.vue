@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import Header from '@/components/layout/Header.vue'
+import PageLayout from '@/components/layout/PageLayout.vue'
 
 const { isAdmin, isGuest, api } = useAuth()
 const toast = useToast()
@@ -37,10 +37,9 @@ const totalEvals = computed(() => teachers.value.reduce((sum, t) => sum + t.tota
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 flex flex-col">
-    <Header />
-    <div v-if="isLoading" class="flex-1 flex items-center justify-center"><div class="animate-spin rounded-full h-12 w-12 border-4 border-orange-400 border-t-transparent"></div></div>
-    <main v-else class="flex-1 max-w-4xl mx-auto p-4 space-y-6 w-full">
+  <PageLayout>
+    <div v-if="isLoading" class="flex items-center justify-center py-20"><div class="animate-spin rounded-full h-12 w-12 border-4 border-orange-400 border-t-transparent"></div></div>
+    <div v-else class="max-w-4xl mx-auto space-y-6 w-full">
       <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div class="bg-white rounded-xl shadow-sm p-4 text-center"><div class="text-2xl font-bold text-orange-500">{{ stats?.teachers || 0 }}</div><div class="text-sm text-gray-500">老师数</div></div>
         <div class="bg-white rounded-xl shadow-sm p-4 text-center"><div class="text-2xl font-bold text-blue-500">{{ stats?.classes || 0 }}</div><div class="text-sm text-gray-500">班级数</div></div>
@@ -88,8 +87,8 @@ const totalEvals = computed(() => teachers.value.reduce((sum, t) => sum + t.tota
         <h3 class="font-bold text-gray-700 mb-2">📈 汇总</h3>
         <div class="grid grid-cols-2 gap-4 text-sm"><div>总学生数: <span class="font-bold text-green-600">{{ totalStudents }} 人</span></div><div>总评价数: <span class="font-bold text-purple-600">{{ totalEvals }} 条</span></div></div>
       </div>
-    </main>
-  </div>
+    </div>
+  </PageLayout>
 </template>
 
 <style scoped>

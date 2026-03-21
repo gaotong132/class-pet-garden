@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { PET_TYPES, getPetLevelImage } from '@/data/pets'
 import PetImage from '@/components/PetImage.vue'
-import Header from '@/components/layout/Header.vue'
+import PageLayout from '@/components/layout/PageLayout.vue'
 
 const categories = [{ id: 'all', name: '全部' }, { id: 'normal', name: '普通动物' }, { id: 'mythical', name: '神兽' }]
 const currentCategory = ref('all')
@@ -27,9 +27,7 @@ function closeDetail() { selectedPet.value = null }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
-    <Header />
-    <main class="flex-1 p-6">
+  <PageLayout>
       <div class="flex gap-3 mb-8">
         <button v-for="cat in categories" :key="cat.id" @click="currentCategory = cat.id" class="px-6 py-3 rounded-xl font-bold transition-all" :class="currentCategory === cat.id ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-50 shadow-md'">{{ cat.name }}</button>
       </div>
@@ -92,8 +90,7 @@ function closeDetail() { selectedPet.value = null }
           </div>
         </div>
       </Transition>
-    </main>
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>

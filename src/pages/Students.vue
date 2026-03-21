@@ -8,10 +8,10 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { matchByPinyin } from '@/utils/pinyin'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
-import Header from '@/components/layout/Header.vue'
+import PageLayout from '@/components/layout/PageLayout.vue'
 import { getPetLevelImage } from '@/data/pets'
 
-const { currentClass, syncCurrentClass } = useClasses()
+const { currentClass } = useClasses()
 const { students, isLoading, loadStudents, addStudent: doAddStudent, updateStudent, deleteStudent: doDeleteStudent, batchDeleteStudents, importStudents: doImportStudents } = useStudents()
 const { allTags, loadTags, loadStudentTags, addTagsToStudents, removeTagsFromStudents, getStudentTags, isTagAppliedToStudents } = useTags()
 const toast = useToast()
@@ -179,16 +179,13 @@ onMounted(async () => {
 })
 
 onActivated(() => {
-  syncCurrentClass()
   loadTags()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
-    <Header />
-    <main class="flex-1 p-6">
-      <div class="max-w-5xl mx-auto">
+  <PageLayout>
+    <div class="max-w-5xl mx-auto">
         <div class="flex items-center justify-between mb-6">
           <div>
             <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2"><span class="text-3xl">👥</span> 学生管理</h1>
@@ -233,12 +230,11 @@ onActivated(() => {
           </div>
         </div>
       </div>
-    </main>
     <Transition name="modal"><div v-if="showAddForm" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="showAddForm = false"><div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl"><h3 class="text-lg font-bold mb-4">➕ 添加学生</h3><div class="space-y-3"><div><label class="block text-sm text-gray-500 mb-1">姓名 *</label><input v-model="newStudentName" type="text" placeholder="请输入学生姓名" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-400" @keyup.enter="handleAddStudent" /></div><div><label class="block text-sm text-gray-500 mb-1">学号（可选）</label><input v-model="newStudentNo" type="text" placeholder="请输入学号" class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-400" @keyup.enter="handleAddStudent" /></div></div><div class="flex justify-end gap-2 mt-6"><button @click="showAddForm = false" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-xl text-sm font-medium transition-colors">取消</button><button @click="handleAddStudent" class="px-4 py-2 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-sm font-medium shadow-sm">添加</button></div></div></div></Transition>
     <Transition name="modal"><div v-if="showImportForm" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="showImportForm = false"><div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl"><h3 class="text-lg font-bold mb-4">📥 批量导入学生</h3><p class="text-sm text-gray-500 mb-3">每行一个学生，格式：<code class="bg-gray-100 px-1 rounded">姓名,学号</code>（分隔符支持中英文逗号、分号、空格）</p><textarea v-model="importText" rows="10" placeholder="张三,001&#10;李四,002" class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-400 font-mono"></textarea><div class="flex justify-end gap-2 mt-4"><button @click="showImportForm = false" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-xl text-sm font-medium transition-colors">取消</button><button @click="handleImportStudents" class="px-4 py-2 bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl text-sm font-medium shadow-sm">导入</button></div></div></div></Transition>
     <Transition name="modal"><div v-if="showTagModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" @click.self="showTagModal = false"><div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl"><h3 class="text-lg font-bold mb-1">🏷️ 管理标签</h3><p class="text-sm text-gray-500 mb-4">{{ taggingStudent ? `为 ${taggingStudent.name}` : `为选中的 ${selectedIds.size} 名学生` }}管理标签</p><div v-if="allTags.length === 0" class="text-center py-6 text-gray-500"><p>暂无标签</p><router-link to="/settings" class="text-orange-500 hover:text-orange-600 text-sm mt-2 inline-block">去创建标签 →</router-link></div><div v-else class="flex flex-wrap gap-2"><button v-for="tag in allTags" :key="tag.id" @click="toggleTag(tag)" class="px-4 py-2 rounded-full text-sm font-medium transition-all" :class="isTagApplied(tag) ? 'ring-2 ring-offset-2 ring-gray-400 scale-105' : 'opacity-70 hover:opacity-100 hover:scale-105'" :style="{ backgroundColor: tag.color, color: 'white' }">{{ tag.name }}<span v-if="isTagApplied(tag)" class="ml-1">✓</span></button></div><div class="flex justify-end gap-2 mt-6"><button @click="showTagModal = false" class="px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-medium shadow-sm hover:bg-orange-600 transition-all">完成</button></div></div></div></Transition>
     <ConfirmDialog :show="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message" :confirm-text="confirmDialog.confirmText" :cancel-text="confirmDialog.cancelText" :type="confirmDialog.type" @confirm="confirmDialog.onConfirm" @cancel="closeConfirm" />
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>

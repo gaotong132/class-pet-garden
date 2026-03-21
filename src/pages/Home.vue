@@ -20,7 +20,7 @@ import BatchActionBar from '@/components/BatchActionBar.vue'
 import DetailPanel from '@/components/DetailPanel.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import AuthModal from '@/components/AuthModal.vue'
-import Header from '@/components/layout/Header.vue'
+import PageLayout from '@/components/layout/PageLayout.vue'
 import StudentModal from '@/components/modals/StudentModal.vue'
 import ImportModal from '@/components/modals/ImportModal.vue'
 import EvaluationModal from '@/components/modals/EvaluationModal.vue'
@@ -36,7 +36,7 @@ const { showLevelUpAnimation, levelUpInfo, levelUpPhase, triggerLevelUp } = useL
 const { triggerAnimation: triggerPetStatusAnimation } = usePetStatusAnimation()
 
 // 使用全局状态
-const { classes, currentClass, loadClasses, syncCurrentClass } = useClasses()
+const { classes, currentClass, loadClasses } = useClasses()
 const { students, isLoading, loadStudents, addStudent: doAddStudent, importStudents: doImportStudents, changePet, batchEvaluate, addEvaluation, undoEvaluation } = useStudents()
 const { allTags, loadTags, getStudentTags } = useTags()
 
@@ -377,7 +377,6 @@ onMounted(async () => {
 
 onActivated(() => {
   checkShowLogin()
-  syncCurrentClass()
   loadStudents()
   loadRules()
   loadTags()
@@ -389,7 +388,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
+  <PageLayout>
     <!-- Loading -->
     <LoadingScreen :show="isLoading" />
 
@@ -410,7 +409,7 @@ onUnmounted(() => {
     <Header :batch-mode="batchMode" />
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-auto p-6">
+    <div class="overflow-auto">
       <!-- 工具栏 -->
       <div class="mb-4 flex flex-wrap items-center gap-3">
         <!-- 左侧：搜索、标签、排序 -->
@@ -510,7 +509,7 @@ onUnmounted(() => {
         mode="batch"
         @evaluate="selectedStudent = null; showEvalModal = true"
       />
-    </main>
+    </div>
 
     <!-- Modals -->
     <StudentModal :show="showStudentModal" @close="showStudentModal = false" @submit="addStudent" />
@@ -521,7 +520,7 @@ onUnmounted(() => {
     <DetailPanel :show="showDetailPanel" :student="detailStudent" :rules="rules" :student-records="studentRecords" @close="closeDetailPanel" @change-pet="showDetailPanel = false; selectedStudent = detailStudent; showPetModal = true" @evaluate="handleDetailEvaluate" />
     <ConfirmDialog :show="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message" :confirm-text="confirmDialog.confirmText" :cancel-text="confirmDialog.cancelText" :type="confirmDialog.type" @confirm="confirmDialog.onConfirm" @cancel="closeConfirm" />
     <AuthModal :show="showAuthModal" @close="showAuthModal = false" @login="handleLogin($event)" />
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>
