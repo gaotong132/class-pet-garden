@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import type { Rule, Class } from '@/types'
 import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -15,7 +16,8 @@ interface Tag {
   created_at: number
 }
 
-const { api, isGuest, username } = useAuth()
+const router = useRouter()
+const { api, isGuest, isAdmin, username, logout } = useAuth()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 
@@ -25,6 +27,16 @@ const classes = ref<Class[]>([])
 const currentClass = ref<Class | null>(null)
 const rules = ref<Rule[]>([])
 const tags = ref<Tag[]>([])
+
+// 处理退出登录
+function handleLogout() {
+  currentClass.value = null
+  rules.value = []
+  tags.value = []
+  localStorage.removeItem('pet-garden-current-class')
+  logout()
+  loadRules()
+}
 
 const categories = ['学习', '行为', '健康', '其他']
 const newRuleName = ref('')
@@ -255,8 +267,11 @@ onMounted(async () => {
       :classes="classes"
       :current-class="currentClass"
       :is-guest="isGuest"
+      :is-admin="isAdmin"
       :username="username"
       :batch-mode="false"
+      @login="router.push('/')"
+      @logout="handleLogout()"
     />
 
     <main class="flex-1 max-w-4xl mx-auto p-6 w-full">

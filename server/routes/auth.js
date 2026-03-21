@@ -51,7 +51,7 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ error: '用户名和密码不能为空' })
   }
 
-  const user = db.prepare('SELECT id, username, password_hash, is_guest FROM users WHERE username = ?').get(username)
+  const user = db.prepare('SELECT id, username, password_hash, is_guest, is_admin FROM users WHERE username = ?').get(username)
 
   if (!user) {
     return res.status(401).json({ error: '用户名或密码错误' })
@@ -65,13 +65,13 @@ router.post('/login', (req, res) => {
   res.json({
     success: true,
     token,
-    user: { id: user.id, username: user.username, isGuest: !!user.is_guest }
+    user: { id: user.id, username: user.username, isGuest: !!user.is_guest, isAdmin: !!user.is_admin }
   })
 })
 
 // 获取当前用户信息
 router.get('/me', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT id, username, is_guest FROM users WHERE id = ?').get(req.userId)
+  const user = db.prepare('SELECT id, username, is_guest, is_admin FROM users WHERE id = ?').get(req.userId)
   if (!user) {
     return res.status(404).json({ error: '用户不存在' })
   }
@@ -79,7 +79,8 @@ router.get('/me', authMiddleware, (req, res) => {
     user: {
       id: user.id,
       username: user.username,
-      isGuest: !!user.is_guest
+      isGuest: !!user.is_guest,
+      isAdmin: !!user.is_admin
     }
   })
 })

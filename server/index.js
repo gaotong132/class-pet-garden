@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { initDb, db } from './db.js'
 import { calculateLevel } from './utils/level.js'
+import { hashPassword } from './utils/password.js'
 
 // 导入路由
 import authRoutes from './routes/auth.js'
@@ -14,6 +15,7 @@ import ruleRoutes from './routes/rules.js'
 import backupRoutes from './routes/backup.js'
 import settingsRoutes from './routes/settings.js'
 import tagRoutes from './routes/tags.js'
+import adminRoutes from './routes/admin.js'
 
 const app = express()
 const PORT = 3002
@@ -32,6 +34,16 @@ if (!guestUser) {
   db.prepare('INSERT INTO users (id, username, password_hash, is_guest, created_at) VALUES (?, ?, ?, ?, ?)')
     .run(guestId, 'guest', '', 1, Date.now())
   console.log('✅ 创建默认游客用户')
+}
+
+// 创建管理员账号
+const adminUser = db.prepare('SELECT id FROM users WHERE username = ?').get('admin')
+if (!adminUser) {
+  const adminId = uuidv4()
+  const adminPasswordHash = hashPassword('Claw2026!')
+  db.prepare('INSERT INTO users (id, username, password_hash, is_guest, is_admin, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(adminId, 'admin', adminPasswordHash, 0, 1, Date.now())
+  console.log('✅ 创建管理员账号: admin')
 }
 
 // 迁移现有班级到游客用户
@@ -66,6 +78,7 @@ app.use('/api/rules', ruleRoutes)
 app.use('/api/backup', backupRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/tags', tagRoutes)
+app.use('/api/admin', adminRoutes)
 
 // 健康检查（公开）
 app.get('/api/health', (req, res) => {

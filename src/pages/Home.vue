@@ -27,7 +27,7 @@ import RecordsModal from '@/components/modals/RecordsModal.vue'
 import PetStatusModal from '@/components/PetStatusModal.vue'
 
 // Auth & Toast
-const { isGuest, username, logout, api } = useAuth()
+const { isGuest, isAdmin, username, logout, api } = useAuth()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 const { showLevelUpAnimation, levelUpInfo, levelUpPhase, triggerLevelUp } = useLevelUp()
@@ -149,6 +149,32 @@ const filteredStudents = computed(() => {
 const detailEvalTab = ref('学习')
 
 // API functions
+
+// 处理登录成功
+function handleLogin(user: { id: string; username: string; isGuest: boolean }) {
+  toast.success(`欢迎，${user.username}！`)
+  // 清除之前的班级选择，避免权限问题
+  currentClass.value = null
+  students.value = []
+  localStorage.removeItem('pet-garden-current-class')
+  // 重新加载数据
+  loadClasses()
+  loadRules()
+}
+
+// 处理退出登录
+function handleLogout() {
+  // 清除班级选择
+  currentClass.value = null
+  students.value = []
+  localStorage.removeItem('pet-garden-current-class')
+  // 退出登录并重新加载数据
+  logout()
+  loadClasses()
+  loadRules()
+  toast.success('已退出登录')
+}
+
 async function loadClasses() {
   try {
     const res = await api.get('/classes')
@@ -600,10 +626,11 @@ onActivated(() => {
       :classes="classes"
       :current-class="currentClass"
       :is-guest="isGuest"
+      :is-admin="isAdmin"
       :username="username"
       :batch-mode="batchMode"
       @login="showAuthModal = true"
-      @logout="logout(); loadClasses(); loadRules(); toast.success('已退出登录')"
+      @logout="handleLogout()"
     />
 
     <!-- Main Content -->
@@ -818,7 +845,7 @@ onActivated(() => {
     <RecordsModal :show="showRecordsModal" :records="evaluationRecords" :total-records="totalRecords" :page="recordsPage" :total-pages="totalPages" @close="showRecordsModal = false" @undo="handleUndoLastEvaluation" @prev-page="recordsPage--; loadEvaluationRecords()" @next-page="recordsPage++; loadEvaluationRecords()" @go-to-page="recordsPage = $event; loadEvaluationRecords()" />
     <DetailPanel :show="showDetailPanel" :student="detailStudent" :rules="rules" :student-records="studentRecords" @close="closeDetailPanel" @change-pet="showDetailPanel = false; selectedStudent = detailStudent; showPetModal = true" @evaluate="handleDetailEvaluate" />
     <ConfirmDialog :show="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message" :confirm-text="confirmDialog.confirmText" :cancel-text="confirmDialog.cancelText" :type="confirmDialog.type" @confirm="confirmDialog.onConfirm" @cancel="closeConfirm" />
-    <AuthModal :show="showAuthModal" @close="showAuthModal = false" @login="toast.success(`欢迎，${$event.username}！`); loadClasses(); loadRules()" />
+    <AuthModal :show="showAuthModal" @close="showAuthModal = false" @login="handleLogin($event)" />
   </div>
 </template>
 

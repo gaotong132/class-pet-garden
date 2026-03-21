@@ -2,15 +2,26 @@
 import { ref, computed, onMounted, onActivated } from 'vue'
 import type { Student, Class } from '@/types'
 import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 import { getPetLevelImage, calculateLevel } from '@/data/pets'
 import Header from '@/components/layout/Header.vue'
 
-const { api, isGuest, username } = useAuth()
+const router = useRouter()
+const { api, isGuest, isAdmin, username, logout } = useAuth()
 
 const classes = ref<Class[]>([])
 const currentClass = ref<Class | null>(null)
 const students = ref<Student[]>([])
 const isLoading = ref(true)
+
+// 处理退出登录
+function handleLogout() {
+  currentClass.value = null
+  students.value = []
+  localStorage.removeItem('pet-garden-current-class')
+  logout()
+  loadRanking()
+}
 
 // 按积分排序的排行榜
 const ranking = computed(() => {
@@ -100,8 +111,11 @@ onActivated(() => {
       :classes="classes" 
       :current-class="currentClass" 
       :is-guest="isGuest"
+      :is-admin="isAdmin"
       :username="username"
       :batch-mode="false"
+      @login="router.push('/')"
+      @logout="handleLogout()"
     />
     
     <div class="flex-1 ranking-page p-6">

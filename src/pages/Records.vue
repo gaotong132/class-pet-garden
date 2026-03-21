@@ -2,12 +2,14 @@
 import { ref, computed, onMounted, onActivated } from 'vue'
 import type { EvaluationRecord, Class } from '@/types'
 import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import Header from '@/components/layout/Header.vue'
 
-const { api, isGuest, username } = useAuth()
+const router = useRouter()
+const { api, isGuest, isAdmin, username, logout } = useAuth()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 
@@ -15,6 +17,15 @@ const classes = ref<Class[]>([])
 const currentClass = ref<Class | null>(null)
 const records = ref<EvaluationRecord[]>([])
 const isLoading = ref(true)
+
+// 处理退出登录
+function handleLogout() {
+  currentClass.value = null
+  records.value = []
+  localStorage.removeItem('pet-garden-current-class')
+  logout()
+  loadRecords()
+}
 
 // 分页
 const page = ref(1)
@@ -173,8 +184,11 @@ onActivated(() => {
       :classes="classes" 
       :current-class="currentClass" 
       :is-guest="isGuest"
+      :is-admin="isAdmin"
       :username="username"
       :batch-mode="false"
+      @login="router.push('/')"
+      @logout="handleLogout()"
     />
 
     <main class="flex-1 p-6">

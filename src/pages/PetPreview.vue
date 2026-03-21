@@ -4,12 +4,22 @@ import { PET_TYPES, getPetLevelImage } from '@/data/pets'
 import PetImage from '@/components/PetImage.vue'
 import Header from '@/components/layout/Header.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 import type { Class } from '@/types'
 
-const { api, isGuest, username } = useAuth()
+const router = useRouter()
+const { api, isGuest, isAdmin, username, logout } = useAuth()
 
 const classes = ref<Class[]>([])
 const currentClass = ref<Class | null>(null)
+
+// 处理退出登录
+function handleLogout() {
+  currentClass.value = null
+  localStorage.removeItem('pet-garden-current-class')
+  logout()
+  loadClasses()
+}
 
 // 分类标签
 const categories = [
@@ -107,8 +117,11 @@ onActivated(() => {
       :classes="classes" 
       :current-class="currentClass" 
       :is-guest="isGuest"
+      :is-admin="isAdmin"
       :username="username"
       :batch-mode="false"
+      @login="router.push('/')"
+      @logout="handleLogout()"
     />
 
     <main class="flex-1 p-6">

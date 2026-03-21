@@ -5,6 +5,7 @@ import Ranking from '@/pages/Ranking.vue'
 import Settings from '@/pages/Settings.vue'
 import Records from '@/pages/Records.vue'
 import Students from '@/pages/Students.vue'
+import Admin from '@/pages/Admin.vue'
 
 const router = createRouter({
   history: createWebHistory('/pet-garden/'),
@@ -14,7 +15,8 @@ const router = createRouter({
     { path: '/ranking', name: 'ranking', component: Ranking },
     { path: '/settings', name: 'settings', component: Settings },
     { path: '/records', name: 'records', component: Records },
-    { path: '/students', name: 'students', component: Students }
+    { path: '/students', name: 'students', component: Students },
+    { path: '/admin', name: 'admin', component: Admin }
   ]
 })
 

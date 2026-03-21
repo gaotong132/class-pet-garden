@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onActivated } from 'vue'
 import type { Student, Class } from '@/types'
 import { useAuth } from '@/composables/useAuth'
+import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
@@ -25,7 +26,8 @@ function getPinyinFull(text: string): string {
   return pinyin(text, { toneType: 'none' }).replace(/\s/g, '').toLowerCase()
 }
 
-const { api, isGuest, username } = useAuth()
+const router = useRouter()
+const { api, isGuest, isAdmin, username, logout } = useAuth()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 
@@ -33,6 +35,15 @@ const classes = ref<Class[]>([])
 const currentClass = ref<Class | null>(null)
 const students = ref<Student[]>([])
 const isLoading = ref(true)
+
+// 处理退出登录
+function handleLogout() {
+  currentClass.value = null
+  students.value = []
+  localStorage.removeItem('pet-garden-current-class')
+  logout()
+  loadClasses()
+}
 
 const allTags = ref<Tag[]>([])
 const studentTags = ref<Map<string, Tag[]>>(new Map())
@@ -152,9 +163,10 @@ async function addStudent() {
     return
   }
   try {
-    await api.post(`/classes/${currentClass.value!.id}/students`, {
+    await api.post('/students', {
+      classId: currentClass.value!.id,
       name: newStudentName.value.trim(),
-      student_no: newStudentNo.value.trim() || null
+      studentNo: newStudentNo.value.trim() || null
     })
     toast.success('添加成功')
     newStudentName.value = ''
@@ -242,14 +254,14 @@ async function importStudents() {
   const lines = importText.value.trim().split('\n').filter(l => l.trim())
   const data = lines.map(line => {
     const parts = line.trim().split(/[,，\t\s]+/)
-    return { name: parts[0]?.trim() || '', student_no: parts[1]?.trim() || null }
+    return { name: parts[0]?.trim() || '', studentNo: parts[1]?.trim() || null }
   }).filter(s => s.name)
   if (data.length === 0) {
     toast.warning('没有有效的学生数据')
     return
   }
   try {
-    await api.post(`/classes/${currentClass.value!.id}/students/batch`, { students: data })
+    await api.post('/students/import', { classId: currentClass.value!.id, students: data })
     toast.success(`成功导入 ${data.length} 名学生`)
     importText.value = ''
     showImportForm.value = false
@@ -330,8 +342,11 @@ onActivated(() => {
       :classes="classes" 
       :current-class="currentClass" 
       :is-guest="isGuest"
+      :is-admin="isAdmin"
       :username="username"
       :batch-mode="false"
+      @login="router.push('/')"
+      @logout="handleLogout()"
     />
 
     <main class="flex-1 p-6">

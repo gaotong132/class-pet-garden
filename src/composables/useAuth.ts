@@ -5,6 +5,7 @@ interface User {
   id: string
   username: string
   isGuest: boolean
+  isAdmin: boolean
 }
 
 // 全局错误处理器
@@ -64,7 +65,7 @@ if (savedUser) {
 
 // 如果没有用户，自动设置为游客
 if (!user.value) {
-  const guestUser = { id: 'guest', username: '游客', isGuest: true }
+  const guestUser = { id: 'guest', username: '游客', isGuest: true, isAdmin: false }
   user.value = guestUser
   token.value = 'guest'
   localStorage.setItem('token', 'guest')
@@ -74,6 +75,7 @@ if (!user.value) {
 // 计算属性
 const isLoggedIn = computed(() => !!user.value && !user.value.isGuest)
 const isGuest = computed(() => user.value?.isGuest ?? true)
+const isAdmin = computed(() => user.value?.isAdmin ?? false)
 const username = computed(() => user.value?.username || '游客')
 
 // 设置用户
@@ -86,7 +88,7 @@ function setUser(userData: User, userToken: string) {
 
 // 退出登录（回到游客模式）
 function logout() {
-  const guestUser = { id: 'guest', username: '游客', isGuest: true }
+  const guestUser = { id: 'guest', username: '游客', isGuest: true, isAdmin: false }
   user.value = guestUser
   token.value = 'guest'
   localStorage.setItem('token', 'guest')
@@ -110,6 +112,7 @@ export function useAuth() {
     token,
     isLoggedIn,
     isGuest,
+    isAdmin,
     username,
     api,
     setUser,

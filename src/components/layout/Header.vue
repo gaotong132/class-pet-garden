@@ -7,6 +7,7 @@ defineProps<{
   classes: Class[]
   currentClass: Class | null
   isGuest: boolean
+  isAdmin: boolean
   username: string
   batchMode: boolean
 }>()
@@ -115,6 +116,14 @@ function isActive(path: string) {
           :class="isActive('/settings') ? 'bg-white text-orange-600 shadow-md' : 'text-white/90 hover:bg-white/20'"
         >
           ⚙️ 设置
+        </router-link>
+        <router-link 
+          v-if="isAdmin"
+          to="/admin" 
+          class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all"
+          :class="isActive('/admin') ? 'bg-white text-orange-600 shadow-md' : 'text-white/90 hover:bg-white/20'"
+        >
+          🔐 管理
         </router-link>
       </nav>
     </div>

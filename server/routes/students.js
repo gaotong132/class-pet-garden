@@ -96,6 +96,35 @@ router.post('/import', authMiddleware, (req, res) => {
   res.json({ success: true, imported })
 })
 
+// 批量删除学生
+router.post('/batch-delete', authMiddleware, (req, res) => {
+  const { ids } = req.body
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: '无效的学生ID列表' })
+  }
+
+  // 验证所有学生都属于当前用户
+  const placeholders = ids.map(() => '?').join(',')
+  const students = db.prepare(`
+    SELECT s.id FROM students s
+    JOIN classes c ON s.class_id = c.id
+    WHERE s.id IN (${placeholders}) AND c.user_id = ?
+  `).all(...ids, req.userId)
+
+  if (students.length !== ids.length) {
+    return res.status(403).json({ error: '部分学生不存在或无权删除' })
+  }
+
+  // 删除评价记录和学生
+  const deleteRecords = db.prepare(`DELETE FROM evaluation_records WHERE student_id IN (${placeholders})`)
+  const deleteStudents = db.prepare(`DELETE FROM students WHERE id IN (${placeholders})`)
+  
+  deleteRecords.run(...ids)
+  deleteStudents.run(...ids)
+  
+  res.json({ success: true, deleted: ids.length })
+})
+
 // 更新学生宠物
 router.put('/:id/pet', authMiddleware, (req, res) => {
   const { petType } = req.body

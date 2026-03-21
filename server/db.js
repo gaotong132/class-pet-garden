@@ -118,4 +118,11 @@ export function initDb() {
   } catch (e) {
     // 字段已存在，忽略错误
   }
+
+  // 迁移：添加 is_admin 到 users（如果不存在）
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0`)
+  } catch (e) {
+    // 字段已存在，忽略错误
+  }
 }
