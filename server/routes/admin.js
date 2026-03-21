@@ -15,7 +15,6 @@ function adminMiddleware(req, res, next) {
 
 // 获取所有老师及其班级统计
 router.get('/teachers', authMiddleware, adminMiddleware, (req, res) => {
-  // 获取所有非游客用户
   const teachers = db.prepare(`
     SELECT id, username, created_at, is_admin
     FROM users
@@ -23,7 +22,6 @@ router.get('/teachers', authMiddleware, adminMiddleware, (req, res) => {
     ORDER BY created_at DESC
   `).all()
 
-  // 为每个老师获取班级和学生统计
   const result = teachers.map(teacher => {
     const classes = db.prepare(`
       SELECT c.id, c.name,
@@ -76,6 +74,72 @@ router.get('/stats', authMiddleware, adminMiddleware, (req, res) => {
   `).all()
 
   res.json({ stats, dailyStats })
+})
+
+// 获取近7天详细统计数据
+router.get('/daily-stats', authMiddleware, adminMiddleware, (req, res) => {
+  // 生成最近7天的日期列表
+  const dates = []
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date()
+    date.setDate(date.getDate() - i)
+    dates.push(date.toISOString().slice(0, 10))
+  }
+
+  // 每天新增用户
+  const newUsers = db.prepare(`
+    SELECT date(created_at/1000, 'unixepoch', 'localtime') as date, count(*) as count
+    FROM users
+    WHERE is_guest = 0 AND created_at/1000 >= strftime('%s', 'now', '-7 days')
+    GROUP BY date
+  `).all()
+
+  // 每天新增班级
+  const newClasses = db.prepare(`
+    SELECT date(created_at/1000, 'unixepoch', 'localtime') as date, count(*) as count
+    FROM classes
+    WHERE created_at/1000 >= strftime('%s', 'now', '-7 days')
+    GROUP BY date
+  `).all()
+
+  // 每天新增学生
+  const newStudents = db.prepare(`
+    SELECT date(created_at/1000, 'unixepoch', 'localtime') as date, count(*) as count
+    FROM students
+    WHERE created_at/1000 >= strftime('%s', 'now', '-7 days')
+    GROUP BY date
+  `).all()
+
+  // 每天评价数
+  const evaluations = db.prepare(`
+    SELECT date(timestamp/1000, 'unixepoch', 'localtime') as date, count(*) as count
+    FROM evaluation_records
+    WHERE timestamp/1000 >= strftime('%s', 'now', '-7 days')
+    GROUP BY date
+  `).all()
+
+  // 转换为日期 -> 数量的映射
+  const toMap = (arr) => {
+    const map = {}
+    arr.forEach(item => { map[item.date] = item.count })
+    return map
+  }
+
+  const usersMap = toMap(newUsers)
+  const classesMap = toMap(newClasses)
+  const studentsMap = toMap(newStudents)
+  const evalsMap = toMap(evaluations)
+
+  // 组装结果，确保每天都有数据
+  const result = dates.map(date => ({
+    date,
+    newUsers: usersMap[date] || 0,
+    newClasses: classesMap[date] || 0,
+    newStudents: studentsMap[date] || 0,
+    evaluations: evalsMap[date] || 0
+  }))
+
+  res.json({ dailyStats: result })
 })
 
 export default router
