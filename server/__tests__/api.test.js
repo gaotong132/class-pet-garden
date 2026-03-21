@@ -35,6 +35,7 @@ function initTestDb() {
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       is_guest INTEGER DEFAULT 0,
+      is_admin INTEGER DEFAULT 0,
       created_at INTEGER
     );
 
@@ -55,6 +56,7 @@ function initTestDb() {
       pet_type TEXT,
       pet_level INTEGER DEFAULT 1,
       pet_exp INTEGER DEFAULT 0,
+      pet_status TEXT DEFAULT 'alive',
       created_at INTEGER,
       FOREIGN KEY (class_id) REFERENCES classes(id)
     );
@@ -77,6 +79,7 @@ function initTestDb() {
       reason TEXT NOT NULL,
       category TEXT NOT NULL,
       timestamp INTEGER,
+      user_id TEXT,
       FOREIGN KEY (class_id) REFERENCES classes(id),
       FOREIGN KEY (student_id) REFERENCES students(id)
     );
@@ -93,13 +96,25 @@ function initTestDb() {
       earned_at INTEGER,
       FOREIGN KEY (student_id) REFERENCES students(id)
     );
-  `)
 
-  // 插入默认规则
-  const now = Date.now()
-  const insertRule = db.prepare('INSERT INTO evaluation_rules (id, name, points, category, is_custom, created_at) VALUES (?, ?, ?, ?, 0, ?)')
-  insertRule.run(uuidv4(), '作业完成优秀', 1, '学习', now)
-  insertRule.run(uuidv4(), '迟到', -1, '行为', now)
+    CREATE TABLE IF NOT EXISTS student_tags (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      color TEXT DEFAULT '#6366f1',
+      created_at INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS student_tag_relations (
+      id TEXT PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      tag_id TEXT NOT NULL,
+      created_at INTEGER,
+      FOREIGN KEY (student_id) REFERENCES students(id),
+      FOREIGN KEY (tag_id) REFERENCES student_tags(id)
+    );
+  `)
 }
 
 beforeAll(() => {

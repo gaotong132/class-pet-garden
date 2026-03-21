@@ -41,8 +41,8 @@ onActivated(() => {
 </script>
 
 <template>
-  <PageLayout content-class="ranking-page">
-    <div class="flex-1 ranking-page p-6">
+  <PageLayout transparent no-padding>
+    <div class="min-h-screen ranking-page">
       <!-- 加载中 -->
       <div v-if="isLoading" class="flex items-center justify-center py-32">
         <div class="text-center">
@@ -62,7 +62,7 @@ onActivated(() => {
       <!-- 排行榜 -->
       <template v-else>
         <!-- 班级名称 -->
-        <div class="text-center mb-4" v-if="currentClass">
+        <div class="text-center pt-6 pb-2" v-if="currentClass">
           <h2 class="text-2xl font-bold text-white drop-shadow-lg">{{ currentClass.name }}</h2>
         </div>
 
@@ -204,6 +204,7 @@ onActivated(() => {
 <style scoped>
 .ranking-page {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  min-height: 100vh;
 }
 
 .podium-section {
@@ -523,20 +524,14 @@ onActivated(() => {
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   border: 1px solid rgba(255,255,255,0.2);
   transition: all 0.3s ease;
-  --x1: 2px;
-  --y1: -3px;
-  --x2: -1px;
-  --y2: 2px;
-  --r1: 0.5deg;
-  --r2: -0.3deg;
   animation: float-random 4s ease-in-out infinite;
 }
 
-.crowd-member:nth-child(5n+1) { --x1: 3px; --y1: -2px; --x2: -2px; --y2: 3px; --r1: 0.8deg; --r2: -0.5deg; animation-delay: 0s; }
-.crowd-member:nth-child(5n+2) { --x1: -2px; --y1: 3px; --x2: 2px; --y2: -2px; --r1: -0.6deg; --r2: 0.4deg; animation-delay: 0.5s; }
-.crowd-member:nth-child(5n+3) { --x1: 1px; --y1: -4px; --x2: -3px; --y2: 1px; --r1: 0.3deg; --r2: -0.7deg; animation-delay: 1s; }
-.crowd-member:nth-child(5n+4) { --x1: -3px; --y1: 2px; --x2: 1px; --y2: -3px; --r1: -0.4deg; --r2: 0.6deg; animation-delay: 1.5s; }
-.crowd-member:nth-child(5n+5) { --x1: 2px; --y1: -1px; --x2: -2px; --y2: 4px; --r1: 0.7deg; --r2: -0.3deg; animation-delay: 2s; }
+.crowd-member:nth-child(5n+1) { animation-delay: 0s; }
+.crowd-member:nth-child(5n+2) { animation-delay: 0.5s; }
+.crowd-member:nth-child(5n+3) { animation-delay: 1s; }
+.crowd-member:nth-child(5n+4) { animation-delay: 1.5s; }
+.crowd-member:nth-child(5n+5) { animation-delay: 2s; }
 
 .crowd-member:hover {
   transform: translateY(-5px) scale(1.05);
@@ -546,12 +541,10 @@ onActivated(() => {
 }
 
 @keyframes float-random {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  20% { transform: translate(var(--x1), var(--y1)) rotate(var(--r1)); }
-  40% { transform: translate(var(--x2), var(--y2)) rotate(var(--r2)); }
-  60% { transform: translate(calc(var(--x1) * -0.5), calc(var(--y1) * 0.8)) rotate(calc(var(--r1) * -0.5)); }
-  80% { transform: translate(calc(var(--x2) * 0.7), calc(var(--y2) * -0.6)) rotate(calc(var(--r2) * 0.7)); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(2px, -3px) rotate(0.5deg); }
+  50% { transform: translate(-1px, 2px) rotate(-0.3deg); }
+  75% { transform: translate(1px, -1px) rotate(0.3deg); }
 }
 
 .crowd-rank {

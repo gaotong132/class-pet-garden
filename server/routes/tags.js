@@ -2,24 +2,17 @@ import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { verifyTagOwnership, verifyStudentsOwnership } from '../middleware/ownership.js'
 
 const router = Router()
 
 // 预设颜色
 const PRESET_COLORS = [
-  '#ef4444', // red
-  '#f97316', // orange
-  '#eab308', // yellow
-  '#22c55e', // green
-  '#14b8a6', // teal
-  '#3b82f6', // blue
-  '#6366f1', // indigo
-  '#a855f7', // purple
-  '#ec4899', // pink
-  '#78716c', // stone
+  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
+  '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#78716c',
 ]
 
-// 获取标签列表（用户隔离）
+// 获取标签列表
 router.get('/', authMiddleware, (req, res) => {
   const tags = db.prepare(`
     SELECT * FROM student_tags
@@ -40,8 +33,7 @@ router.post('/', authMiddleware, (req, res) => {
 
   // 检查是否重复
   const existing = db.prepare(`
-    SELECT id FROM student_tags
-    WHERE user_id = ? AND name = ?
+    SELECT id FROM student_tags WHERE user_id = ? AND name = ?
   `).get(req.userId, name.trim())
 
   if (existing) {
@@ -71,16 +63,12 @@ router.put('/:id', authMiddleware, (req, res) => {
   const { name, color } = req.body
   const tagId = req.params.id
 
-  // 检查标签是否属于当前用户
-  const tag = db.prepare(`
-    SELECT * FROM student_tags WHERE id = ? AND user_id = ?
-  `).get(tagId, req.userId)
-
+  const tag = verifyTagOwnership(tagId, req.userId)
   if (!tag) {
     return res.status(404).json({ error: '标签不存在或无权修改' })
   }
 
-  // 检查名称是否重复（排除自己）
+  // 检查名称是否重复
   if (name && name.trim() !== tag.name) {
     const existing = db.prepare(`
       SELECT id FROM student_tags
@@ -96,9 +84,7 @@ router.put('/:id', authMiddleware, (req, res) => {
   const newColor = color || tag.color
 
   db.prepare(`
-    UPDATE student_tags
-    SET name = ?, color = ?
-    WHERE id = ?
+    UPDATE student_tags SET name = ?, color = ? WHERE id = ?
   `).run(newName, newColor, tagId)
 
   res.json({
@@ -114,19 +100,12 @@ router.put('/:id', authMiddleware, (req, res) => {
 router.delete('/:id', authMiddleware, (req, res) => {
   const tagId = req.params.id
 
-  // 检查标签是否属于当前用户
-  const tag = db.prepare(`
-    SELECT * FROM student_tags WHERE id = ? AND user_id = ?
-  `).get(tagId, req.userId)
-
+  const tag = verifyTagOwnership(tagId, req.userId)
   if (!tag) {
     return res.status(404).json({ error: '标签不存在或无权删除' })
   }
 
-  // 删除标签关联
   db.prepare('DELETE FROM student_tag_relations WHERE tag_id = ?').run(tagId)
-
-  // 删除标签
   db.prepare('DELETE FROM student_tags WHERE id = ?').run(tagId)
 
   res.json({ success: true })
@@ -160,16 +139,11 @@ router.post('/student/:studentId', authMiddleware, (req, res) => {
     return res.status(400).json({ error: '缺少标签ID' })
   }
 
-  // 检查标签是否属于当前用户
-  const tag = db.prepare(`
-    SELECT * FROM student_tags WHERE id = ? AND user_id = ?
-  `).get(tagId, req.userId)
-
+  const tag = verifyTagOwnership(tagId, req.userId)
   if (!tag) {
     return res.status(404).json({ error: '标签不存在或无权使用' })
   }
 
-  // 检查是否已存在
   const existing = db.prepare(`
     SELECT id FROM student_tag_relations
     WHERE student_id = ? AND tag_id = ?
@@ -194,11 +168,7 @@ router.post('/student/:studentId', authMiddleware, (req, res) => {
 router.delete('/student/:studentId/:tagId', authMiddleware, (req, res) => {
   const { studentId, tagId } = req.params
 
-  // 检查标签是否属于当前用户
-  const tag = db.prepare(`
-    SELECT * FROM student_tags WHERE id = ? AND user_id = ?
-  `).get(tagId, req.userId)
-
+  const tag = verifyTagOwnership(tagId, req.userId)
   if (!tag) {
     return res.status(404).json({ error: '标签不存在或无权操作' })
   }
@@ -223,11 +193,7 @@ router.post('/batch-add', authMiddleware, (req, res) => {
     return res.status(400).json({ error: '缺少标签ID' })
   }
 
-  // 检查标签是否属于当前用户
-  const tag = db.prepare(`
-    SELECT * FROM student_tags WHERE id = ? AND user_id = ?
-  `).get(tagId, req.userId)
-
+  const tag = verifyTagOwnership(tagId, req.userId)
   if (!tag) {
     return res.status(404).json({ error: '标签不存在或无权使用' })
   }
@@ -261,11 +227,7 @@ router.post('/batch-remove', authMiddleware, (req, res) => {
     return res.status(400).json({ error: '缺少标签ID' })
   }
 
-  // 检查标签是否属于当前用户
-  const tag = db.prepare(`
-    SELECT * FROM student_tags WHERE id = ? AND user_id = ?
-  `).get(tagId, req.userId)
-
+  const tag = verifyTagOwnership(tagId, req.userId)
   if (!tag) {
     return res.status(404).json({ error: '标签不存在或无权操作' })
   }

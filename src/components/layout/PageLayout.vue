@@ -5,6 +5,10 @@ import Header from './Header.vue'
 
 defineProps<{
   contentClass?: string
+  /** 透明背景模式，适用于自带背景的页面（如排行榜） */
+  transparent?: boolean
+  /** 无内边距模式，适用于全屏内容 */
+  noPadding?: boolean
 }>()
 
 const { syncCurrentClass } = useClasses()
@@ -16,10 +20,16 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
+  <div 
+    class="min-h-screen flex flex-col" 
+    :class="transparent ? '' : 'bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50'"
+  >
     <Header />
 
-    <main class="flex-1 p-6" :class="contentClass">
+    <main 
+      class="flex-1" 
+      :class="[noPadding ? '' : 'p-6', contentClass]"
+    >
       <slot />
     </main>
   </div>

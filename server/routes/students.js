@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
-import { calculateLevel } from '../utils/level.js'
+import { verifyClassOwnership, verifyStudentOwnership, verifyStudentsOwnership } from '../middleware/ownership.js'
 
 const router = Router()
 
@@ -11,12 +11,9 @@ router.post('/', authMiddleware, (req, res) => {
   const { classId, name, studentNo } = req.body
 
   // 验证班级归属
-  const cls = db.prepare('SELECT * FROM classes WHERE id = ?').get(classId)
+  const cls = verifyClassOwnership(classId, req.userId)
   if (!cls) {
-    return res.status(404).json({ error: '班级不存在' })
-  }
-  if (cls.user_id !== req.userId) {
-    return res.status(403).json({ error: '无权访问此班级' })
+    return res.status(403).json({ error: '班级不存在或无权访问' })
   }
 
   const id = uuidv4()
@@ -30,13 +27,7 @@ router.post('/', authMiddleware, (req, res) => {
 router.put('/:id', authMiddleware, (req, res) => {
   const { name, studentNo } = req.body
 
-  // 验证学生归属
-  const student = db.prepare(`
-    SELECT s.* FROM students s
-    JOIN classes c ON s.class_id = c.id
-    WHERE s.id = ? AND c.user_id = ?
-  `).get(req.params.id, req.userId)
-
+  const student = verifyStudentOwnership(req.params.id, req.userId)
   if (!student) {
     return res.status(404).json({ error: '学生不存在或无权访问' })
   }
@@ -47,13 +38,7 @@ router.put('/:id', authMiddleware, (req, res) => {
 
 // 删除学生
 router.delete('/:id', authMiddleware, (req, res) => {
-  // 验证学生归属
-  const student = db.prepare(`
-    SELECT s.* FROM students s
-    JOIN classes c ON s.class_id = c.id
-    WHERE s.id = ? AND c.user_id = ?
-  `).get(req.params.id, req.userId)
-
+  const student = verifyStudentOwnership(req.params.id, req.userId)
   if (!student) {
     return res.status(404).json({ error: '学生不存在或无权访问' })
   }
@@ -72,13 +57,9 @@ router.post('/import', authMiddleware, (req, res) => {
     return res.status(400).json({ error: 'Invalid input' })
   }
 
-  // 验证班级归属
-  const cls = db.prepare('SELECT * FROM classes WHERE id = ?').get(classId)
+  const cls = verifyClassOwnership(classId, req.userId)
   if (!cls) {
-    return res.status(404).json({ error: '班级不存在' })
-  }
-  if (cls.user_id !== req.userId) {
-    return res.status(403).json({ error: '无权访问此班级' })
+    return res.status(403).json({ error: '班级不存在或无权访问' })
   }
 
   const now = Date.now()
@@ -103,24 +84,15 @@ router.post('/batch-delete', authMiddleware, (req, res) => {
     return res.status(400).json({ error: '无效的学生ID列表' })
   }
 
-  // 验证所有学生都属于当前用户
-  const placeholders = ids.map(() => '?').join(',')
-  const students = db.prepare(`
-    SELECT s.id FROM students s
-    JOIN classes c ON s.class_id = c.id
-    WHERE s.id IN (${placeholders}) AND c.user_id = ?
-  `).all(...ids, req.userId)
-
-  if (students.length !== ids.length) {
+  const { valid, students: validStudents } = verifyStudentsOwnership(ids, req.userId)
+  if (!valid) {
     return res.status(403).json({ error: '部分学生不存在或无权删除' })
   }
 
   // 删除评价记录和学生
-  const deleteRecords = db.prepare(`DELETE FROM evaluation_records WHERE student_id IN (${placeholders})`)
-  const deleteStudents = db.prepare(`DELETE FROM students WHERE id IN (${placeholders})`)
-  
-  deleteRecords.run(...ids)
-  deleteStudents.run(...ids)
+  const placeholders = ids.map(() => '?').join(',')
+  db.prepare(`DELETE FROM evaluation_records WHERE student_id IN (${placeholders})`).run(...ids)
+  db.prepare(`DELETE FROM students WHERE id IN (${placeholders})`).run(...ids)
   
   res.json({ success: true, deleted: ids.length })
 })
@@ -130,13 +102,7 @@ router.put('/:id/pet', authMiddleware, (req, res) => {
   const { petType } = req.body
   const now = Date.now()
 
-  // 验证学生归属
-  const student = db.prepare(`
-    SELECT s.* FROM students s
-    JOIN classes c ON s.class_id = c.id
-    WHERE s.id = ? AND c.user_id = ?
-  `).get(req.params.id, req.userId)
-
+  const student = verifyStudentOwnership(req.params.id, req.userId)
   if (!student) {
     return res.status(404).json({ error: '学生不存在或无权访问' })
   }

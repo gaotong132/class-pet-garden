@@ -2,10 +2,11 @@ import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { verifyClassOwnership } from '../middleware/ownership.js'
 
 const router = Router()
 
-// 获取班级列表（只返回当前用户的班级）
+// 获取班级列表
 router.get('/', authMiddleware, (req, res) => {
   const classes = db.prepare('SELECT * FROM classes WHERE user_id = ? ORDER BY created_at DESC').all(req.userId)
   res.json({ classes })
@@ -13,13 +14,11 @@ router.get('/', authMiddleware, (req, res) => {
 
 // 获取班级学生列表（包含标签）
 router.get('/:classId/students', authMiddleware, (req, res) => {
-  const cls = db.prepare('SELECT * FROM classes WHERE id = ?').get(req.params.classId)
+  const cls = verifyClassOwnership(req.params.classId, req.userId)
   if (!cls) {
-    return res.status(404).json({ error: '班级不存在' })
+    return res.status(403).json({ error: '班级不存在或无权访问' })
   }
-  if (cls.user_id !== req.userId) {
-    return res.status(403).json({ error: '无权访问此班级' })
-  }
+  
   const students = db.prepare('SELECT * FROM students WHERE class_id = ? ORDER BY name').all(req.params.classId)
   
   // 批量获取所有学生的标签
@@ -38,7 +37,7 @@ router.get('/:classId/students', authMiddleware, (req, res) => {
   res.json({ students: studentsWithTags })
 })
 
-// 创建班级（关联当前用户）
+// 创建班级
 router.post('/', authMiddleware, (req, res) => {
   const { name } = req.body
   const id = uuidv4()
@@ -53,13 +52,10 @@ router.post('/', authMiddleware, (req, res) => {
 // 更新班级
 router.put('/:id', authMiddleware, (req, res) => {
   const { name } = req.body
-  const classInfo = db.prepare('SELECT user_id FROM classes WHERE id = ?').get(req.params.id)
+  const cls = verifyClassOwnership(req.params.id, req.userId)
 
-  if (!classInfo) {
-    return res.status(404).json({ error: '班级不存在' })
-  }
-  if (classInfo.user_id !== req.userId) {
-    return res.status(403).json({ error: '无权修改' })
+  if (!cls) {
+    return res.status(404).json({ error: '班级不存在或无权修改' })
   }
 
   const now = Date.now()
@@ -69,13 +65,9 @@ router.put('/:id', authMiddleware, (req, res) => {
 
 // 删除班级
 router.delete('/:id', authMiddleware, (req, res) => {
-  const classInfo = db.prepare('SELECT user_id FROM classes WHERE id = ?').get(req.params.id)
-
-  if (!classInfo) {
-    return res.status(404).json({ error: '班级不存在' })
-  }
-  if (classInfo.user_id !== req.userId) {
-    return res.status(403).json({ error: '无权删除' })
+  const cls = verifyClassOwnership(req.params.id, req.userId)
+  if (!cls) {
+    return res.status(404).json({ error: '班级不存在或无权删除' })
   }
 
   // Delete students in this class first

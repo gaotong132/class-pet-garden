@@ -2,10 +2,11 @@ import { Router } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from '../db.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { verifyRuleOwnership } from '../middleware/ownership.js'
 
 const router = Router()
 
-// 默认规则模板（完整版）
+// 默认规则模板
 const DEFAULT_RULES = [
   // ===== 学习 =====
   { name: '平时测验满分', points: 3, category: '学习' },
@@ -108,7 +109,6 @@ const DEFAULT_RULES = [
   { name: '扣分严重/打架/作弊/严重违纪', points: -8, category: '其他' },
 ]
 
-// 为用户复制默认规则（使用事务批量插入）
 function copyDefaultRules(userId) {
   const now = Date.now()
   const stmt = db.prepare(`
@@ -116,7 +116,6 @@ function copyDefaultRules(userId) {
     VALUES (?, ?, ?, ?, ?, ?)
   `)
 
-  // 使用事务包装，84 条规则一次性提交
   const insertMany = db.transaction((rules) => {
     for (const rule of rules) {
       stmt.run(uuidv4(), rule.name, rule.points, rule.category, userId, now)
@@ -127,7 +126,7 @@ function copyDefaultRules(userId) {
   return DEFAULT_RULES.length
 }
 
-// 获取规则列表（完全用户隔离）
+// 获取规则列表
 router.get('/', authMiddleware, (req, res) => {
   let rules = db.prepare(`
     SELECT * FROM evaluation_rules
@@ -138,7 +137,6 @@ router.get('/', authMiddleware, (req, res) => {
       created_at DESC
   `).all(req.userId)
   
-  // 新用户自动初始化默认规则
   if (rules.length === 0) {
     copyDefaultRules(req.userId)
     rules = db.prepare(`
@@ -180,16 +178,12 @@ router.post('/', authMiddleware, (req, res) => {
   })
 })
 
-// 重置为默认规则（必须在 /:id 路由之前）
+// 重置为默认规则
 router.post('/reset', authMiddleware, (req, res) => {
   try {
-    // 删除用户所有规则
     db.prepare('DELETE FROM evaluation_rules WHERE user_id = ?').run(req.userId)
-    
-    // 复制默认模板
     const count = copyDefaultRules(req.userId)
     
-    // 返回新规则
     const rules = db.prepare(`
       SELECT * FROM evaluation_rules
       WHERE user_id = ?
@@ -220,7 +214,7 @@ router.put('/:id', authMiddleware, (req, res) => {
   res.json({ success: true })
 })
 
-// 删除规则（用户可删除自己的任何规则）
+// 删除规则
 router.delete('/:id', authMiddleware, (req, res) => {
   const result = db.prepare(`
     DELETE FROM evaluation_rules 
@@ -234,10 +228,8 @@ router.delete('/:id', authMiddleware, (req, res) => {
   res.json({ success: true })
 })
 
-// 获取用户最常用的规则（从评价记录统计）
+// 获取用户最常用的规则
 router.get('/frequent', authMiddleware, (req, res) => {
-  // 只返回当前用户还存在的规则（包括用户自己的规则和公共规则）
-  // 先展示加分规则，再展示减分规则
   const frequentRules = db.prepare(`
     SELECT 
       er.reason as name,
@@ -248,7 +240,7 @@ router.get('/frequent', authMiddleware, (req, res) => {
     WHERE er.user_id = ?
     AND EXISTS (
       SELECT 1 FROM evaluation_rules r 
-      WHERE (r.user_id = ? OR r.user_id IS NULL)
+      WHERE r.user_id = ?
       AND r.name = er.reason 
       AND r.points = er.points
     )
