@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onActivated } from 'vue'
-import type { Student, Class } from '@/types'
+import { ref, computed, onMounted, onActivated, watch } from 'vue'
+import type { Student } from '@/types'
 import { useAuth } from '@/composables/useAuth'
+import { useClasses } from '@/composables/useClasses'
 import { getPetLevelImage, calculateLevel } from '@/data/pets'
 import Header from '@/components/layout/Header.vue'
 
-const { api, isGuest, isAdmin, username } = useAuth()
+const { api } = useAuth()
+const { currentClass, syncCurrentClass } = useClasses()
 
-const classes = ref<Class[]>([])
-const currentClass = ref<Class | null>(null)
 const students = ref<Student[]>([])
 const isLoading = ref(true)
-
-// 处理退出登录
 
 // 按积分排序的排行榜
 const ranking = computed(() => {
@@ -23,11 +21,11 @@ const ranking = computed(() => {
 const podiumOrder = computed(() => {
   const sorted = ranking.value
   return [
-    sorted[3] || null, // 左边 - 第四名
-    sorted[1] || null, // 左中 - 第二名
-    sorted[0] || null, // 中间 - 第一名
-    sorted[2] || null, // 右中 - 第三名
-    sorted[4] || null  // 右边 - 第五名
+    sorted[3] || null,
+    sorted[1] || null,
+    sorted[0] || null,
+    sorted[2] || null,
+    sorted[4] || null
   ]
 })
 
@@ -44,70 +42,44 @@ function getDisplayLevel(student: Student): number {
   return calculateLevel(student.pet_exp)
 }
 
-async function loadRanking() {
-  isLoading.value = true
-  try {
-    const classRes = await api.get('/classes')
-    classes.value = classRes.data.classes
-    
-    if (classes.value.length > 0) {
-      const savedClassId = localStorage.getItem('pet-garden-current-class')
-      const targetClass = savedClassId 
-        ? classes.value.find(c => c.id === savedClassId) 
-        : classes.value[0]
-      
-      currentClass.value = targetClass || classes.value[0]
-      
-      const res = await api.get(`/classes/${currentClass.value.id}/students`)
-      students.value = res.data.students
-    }
-  } catch (error) {
-    console.error('加载排行榜失败:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// 检查班级是否变化，如有则重新加载
-function checkClassAndReload() {
-  const savedClassId = localStorage.getItem('pet-garden-current-class')
-  if (savedClassId && savedClassId !== currentClass.value?.id) {
-    currentClass.value = classes.value.find(c => c.id === savedClassId) || classes.value[0]
-    loadStudents()
-  }
-}
-
 async function loadStudents() {
   if (!currentClass.value) return
+  isLoading.value = true
   try {
     const res = await api.get(`/classes/${currentClass.value.id}/students`)
     students.value = res.data.students
   } catch (error) {
     console.error('加载学生失败:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
+// 监听班级变化
+watch(currentClass, (newClass) => {
+  if (newClass) {
+    loadStudents()
+  } else {
+    students.value = []
+  }
+})
+
 onMounted(() => {
-  loadRanking()
+  if (currentClass.value) {
+    loadStudents()
+  } else {
+    isLoading.value = false
+  }
 })
 
 onActivated(() => {
-  checkClassAndReload()
+  syncCurrentClass()
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
-    <Header 
-      :classes="classes" 
-      :current-class="currentClass" 
-      :is-guest="isGuest"
-      :is-admin="isAdmin"
-      :username="username"
-      :batch-mode="false"
-      
-      
-    />
+    <Header />
     
     <div class="flex-1 ranking-page p-6">
       <!-- 加载中 -->
@@ -590,7 +562,6 @@ onActivated(() => {
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   border: 1px solid rgba(255,255,255,0.2);
   transition: all 0.3s ease;
-  /* 使用 CSS 变量实现随机动画 */
   --x1: 2px;
   --y1: -3px;
   --x2: -1px;
@@ -600,7 +571,6 @@ onActivated(() => {
   animation: float-random 4s ease-in-out infinite;
 }
 
-/* 为不同索引的元素设置不同的动画参数 */
 .crowd-member:nth-child(5n+1) { --x1: 3px; --y1: -2px; --x2: -2px; --y2: 3px; --r1: 0.8deg; --r2: -0.5deg; animation-delay: 0s; }
 .crowd-member:nth-child(5n+2) { --x1: -2px; --y1: 3px; --x2: 2px; --y2: -2px; --r1: -0.6deg; --r2: 0.4deg; animation-delay: 0.5s; }
 .crowd-member:nth-child(5n+3) { --x1: 1px; --y1: -4px; --x2: -3px; --y2: 1px; --r1: 0.3deg; --r2: -0.7deg; animation-delay: 1s; }

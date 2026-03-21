@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onActivated } from 'vue'
-import type { EvaluationRecord, Class } from '@/types'
+import { ref, computed, onMounted, onActivated, watch } from 'vue'
+import type { EvaluationRecord } from '@/types'
 import { useAuth } from '@/composables/useAuth'
+import { useClasses } from '@/composables/useClasses'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import Header from '@/components/layout/Header.vue'
 
-const { api, isGuest, isAdmin, username } = useAuth()
+const { api } = useAuth()
+const { currentClass, syncCurrentClass } = useClasses()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 
-const classes = ref<Class[]>([])
-const currentClass = ref<Class | null>(null)
 const records = ref<EvaluationRecord[]>([])
 const isLoading = ref(true)
-
-// 处理退出登录
 
 // 分页
 const page = ref(1)
@@ -52,27 +50,11 @@ function formatDate(timestamp: number) {
   })
 }
 
-async function loadClasses() {
-  try {
-    const res = await api.get('/classes')
-    classes.value = res.data.classes
-    if (classes.value.length > 0) {
-      const savedClassId = localStorage.getItem('pet-garden-current-class')
-      currentClass.value = savedClassId 
-        ? classes.value.find(c => c.id === savedClassId) || classes.value[0]
-        : classes.value[0]
-    }
-  } catch (error) {
-    console.error('加载班级失败:', error)
-  }
-}
-
 async function loadRecords() {
   if (!currentClass.value) return
   isLoading.value = true
   try {
     const res = await api.get(`/evaluations?classId=${currentClass.value.id}&page=${page.value}&pageSize=${pageSize}`)
-    // 最新记录在前（API 返回的是旧记录在前，需要反转）
     records.value = (res.data.records || []).reverse()
     totalRecords.value = res.data.total
   } catch (error) {
@@ -111,7 +93,6 @@ async function undoRecord(recordId: string) {
         await api.delete(`/evaluations/${recordId}`)
         toast.success('已撤回')
         selectedIds.value.delete(recordId)
-        // 通知其他页面数据已变更
         localStorage.setItem('pet-garden-data-version', Date.now().toString())
         loadRecords()
       } catch (error) {
@@ -141,27 +122,29 @@ async function undoSelected() {
       }
       toast.success(`已撤回 ${successCount} 条评价`)
       selectedIds.value.clear()
-      // 通知其他页面数据已变更
       localStorage.setItem('pet-garden-data-version', Date.now().toString())
       loadRecords()
     }
   })
 }
 
-// 检查班级是否变化
-function syncCurrentClass() {
-  const savedClassId = localStorage.getItem('pet-garden-current-class')
-  if (savedClassId && savedClassId !== currentClass.value?.id) {
-    currentClass.value = classes.value.find(c => c.id === savedClassId) || classes.value[0]
+// 监听班级变化
+watch(currentClass, (newClass) => {
+  if (newClass) {
     page.value = 1
     selectedIds.value.clear()
     loadRecords()
+  } else {
+    records.value = []
   }
-}
+})
 
 onMounted(async () => {
-  await loadClasses()
-  await loadRecords()
+  if (currentClass.value) {
+    await loadRecords()
+  } else {
+    isLoading.value = false
+  }
 })
 
 onActivated(() => {
@@ -171,16 +154,7 @@ onActivated(() => {
 
 <template>
   <div class="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex flex-col">
-    <Header 
-      :classes="classes" 
-      :current-class="currentClass" 
-      :is-guest="isGuest"
-      :is-admin="isAdmin"
-      :username="username"
-      :batch-mode="false"
-      
-      
-    />
+    <Header />
 
     <main class="flex-1 p-6">
       <div class="max-w-5xl mx-auto">
@@ -224,6 +198,11 @@ onActivated(() => {
         </div>
 
         <!-- 无记录 -->
+        <div v-else-if="!currentClass" class="text-center py-20 text-gray-500 bg-white rounded-2xl shadow-sm">
+          <div class="text-6xl mb-4">📚</div>
+          <div>请先选择班级</div>
+        </div>
+
         <div v-else-if="records.length === 0" class="text-center py-20 text-gray-500 bg-white rounded-2xl shadow-sm">
           <div class="text-6xl mb-4">📝</div>
           <div>暂无评价记录</div>
@@ -256,7 +235,6 @@ onActivated(() => {
             class="grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-50 hover:bg-gray-50/50 transition-colors items-center"
             :class="{ 'bg-orange-50/30': selectedIds.has(record.id) }"
           >
-            <!-- 选择框 -->
             <div class="col-span-1">
               <input 
                 type="checkbox" 
@@ -266,7 +244,6 @@ onActivated(() => {
               />
             </div>
 
-            <!-- 学生 -->
             <div class="col-span-2 flex items-center gap-2">
               <span class="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 text-white flex items-center justify-center text-xs font-bold shrink-0">
                 {{ record.student_name?.charAt(0) || '?' }}
@@ -274,7 +251,6 @@ onActivated(() => {
               <span class="font-medium text-gray-800 truncate">{{ record.student_name }}</span>
             </div>
 
-            <!-- 积分 -->
             <div class="col-span-2">
               <span
                 class="px-2.5 py-1 rounded-full text-sm font-bold"
@@ -284,22 +260,18 @@ onActivated(() => {
               </span>
             </div>
 
-            <!-- 原因 -->
             <div class="col-span-3 text-sm text-gray-600 truncate" :title="record.reason">
               {{ record.reason }}
             </div>
 
-            <!-- 分类 -->
             <div class="col-span-1">
               <span class="text-xs px-2 py-1 bg-gray-100 rounded-lg text-gray-500">{{ record.category }}</span>
             </div>
 
-            <!-- 时间 -->
             <div class="col-span-2 text-sm text-gray-400">
               {{ formatDate(record.timestamp) }}
             </div>
 
-            <!-- 操作 -->
             <div class="col-span-1 text-right">
               <button 
                 @click="undoRecord(record.id)" 

@@ -36,7 +36,7 @@ function close() {
           <span class="text-2xl">📥</span> 批量导入学生
         </h3>
         <p class="text-sm text-gray-500 mb-4">
-          一行一个学生，姓名和学号用空格、逗号、Tab或分号分隔
+          一行一个学生，姓名和学号用空格、逗号、Tab或分号分隔（中英文均可）
         </p>
         <textarea
           v-model="importText"
@@ -47,7 +47,7 @@ function close() {
           <p class="font-medium mb-2 flex items-center gap-2"><span>💡</span> 示例格式：</p>
           <code class="text-xs bg-white px-3 py-2 rounded-lg block text-gray-500">
             张三 20240001<br>
-            李四,20240002<br>
+            李四，20240002<br>
             王五；20240003
           </code>
         </div>
