@@ -8,18 +8,12 @@ import { useRouter } from 'vue-router'
 import type { Class } from '@/types'
 
 const router = useRouter()
-const { api, isGuest, isAdmin, username, logout } = useAuth()
+const { api, isGuest, isAdmin, username } = useAuth()
 
 const classes = ref<Class[]>([])
 const currentClass = ref<Class | null>(null)
 
 // 处理退出登录
-function handleLogout() {
-  currentClass.value = null
-  localStorage.removeItem('pet-garden-current-class')
-  logout()
-  loadClasses()
-}
 
 // 分类标签
 const categories = [
@@ -121,7 +115,7 @@ onActivated(() => {
       :username="username"
       :batch-mode="false"
       @login="router.push('/')"
-      @logout="handleLogout()"
+      
     />
 
     <main class="flex-1 p-6">

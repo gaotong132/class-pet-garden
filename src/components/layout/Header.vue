@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Class } from '@/types'
+import { useAuth } from '@/composables/useAuth'
 
 defineProps<{
   classes: Class[]
@@ -12,17 +13,22 @@ defineProps<{
   batchMode: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   login: []
-  logout: []
 }>()
 
 const route = useRoute()
-
+const { logout } = useAuth()
 const showUserMenu = ref(false)
 
 function isActive(path: string) {
   return route.path === path
+}
+
+function handleLogout() {
+  logout()
+  showUserMenu.value = false
+  window.location.reload()
 }
 </script>
 
@@ -56,12 +62,12 @@ function isActive(path: string) {
                 已登录: {{ username }}
               </div>
               <template v-if="isGuest">
-                <button @click="$emit('login'); showUserMenu = false" class="w-full text-left px-3 py-2 text-sm hover:bg-gradient-to-r hover:from-orange-50 hover:to-pink-50 transition-colors">
+                <button @click="emit('login'); showUserMenu = false" class="w-full text-left px-3 py-2 text-sm hover:bg-gradient-to-r hover:from-orange-50 hover:to-pink-50 transition-colors">
                   🔑 登录 / 注册
                 </button>
               </template>
               <template v-else>
-                <button @click="$emit('logout'); showUserMenu = false" class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                <button @click="handleLogout" class="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">
                   🚪 退出登录
                 </button>
               </template>

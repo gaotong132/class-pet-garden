@@ -5,15 +5,11 @@ import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import Header from '@/components/layout/Header.vue'
 
-const { isAdmin, isGuest, api, username, logout } = useAuth()
+const { isAdmin, isGuest, api, username } = useAuth()
 const toast = useToast()
 const router = useRouter()
 
 // 处理退出登录
-function handleLogout() {
-  logout()
-  router.push('/')
-}
 
 interface TeacherClass {
   id: string
@@ -107,7 +103,7 @@ const totalEvals = computed(() => {
       :username="username"
       :batch-mode="false"
       @login="router.push('/')"
-      @logout="handleLogout()"
+      
     />
 
     <!-- Loading -->

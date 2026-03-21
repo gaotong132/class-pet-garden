@@ -17,7 +17,7 @@ interface Tag {
 }
 
 const router = useRouter()
-const { api, isGuest, isAdmin, username, logout } = useAuth()
+const { api, isGuest, isAdmin, username } = useAuth()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 
@@ -29,14 +29,6 @@ const rules = ref<Rule[]>([])
 const tags = ref<Tag[]>([])
 
 // 处理退出登录
-function handleLogout() {
-  currentClass.value = null
-  rules.value = []
-  tags.value = []
-  localStorage.removeItem('pet-garden-current-class')
-  logout()
-  loadRules()
-}
 
 const categories = ['学习', '行为', '健康', '其他']
 const newRuleName = ref('')
@@ -271,7 +263,7 @@ onMounted(async () => {
       :username="username"
       :batch-mode="false"
       @login="router.push('/')"
-      @logout="handleLogout()"
+      
     />
 
     <main class="flex-1 max-w-4xl mx-auto p-6 w-full">

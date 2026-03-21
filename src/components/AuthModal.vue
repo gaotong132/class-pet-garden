@@ -66,10 +66,8 @@ async function handleSubmit() {
       emit('login', res.data.user)
       emit('close')
       
-      // 重置表单
-      username.value = ''
-      password.value = ''
-      confirmPassword.value = ''
+      // 刷新页面，让所有数据重新加载
+      window.location.reload()
     }
   } catch (err: any) {
     error.value = err.response?.data?.error || '操作失败，请重试'

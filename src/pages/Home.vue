@@ -27,7 +27,7 @@ import RecordsModal from '@/components/modals/RecordsModal.vue'
 import PetStatusModal from '@/components/PetStatusModal.vue'
 
 // Auth & Toast
-const { isGuest, isAdmin, username, logout, api } = useAuth()
+const { isGuest, isAdmin, username, api } = useAuth()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 const { showLevelUpAnimation, levelUpInfo, levelUpPhase, triggerLevelUp } = useLevelUp()
@@ -163,17 +163,6 @@ function handleLogin(user: { id: string; username: string; isGuest: boolean }) {
 }
 
 // 处理退出登录
-function handleLogout() {
-  // 清除班级选择
-  currentClass.value = null
-  students.value = []
-  localStorage.removeItem('pet-garden-current-class')
-  // 退出登录并重新加载数据
-  logout()
-  loadClasses()
-  loadRules()
-  toast.success('已退出登录')
-}
 
 async function loadClasses() {
   try {
@@ -630,7 +619,7 @@ onActivated(() => {
       :username="username"
       :batch-mode="batchMode"
       @login="showAuthModal = true"
-      @logout="handleLogout()"
+      
     />
 
     <!-- Main Content -->

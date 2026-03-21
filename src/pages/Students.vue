@@ -27,7 +27,7 @@ function getPinyinFull(text: string): string {
 }
 
 const router = useRouter()
-const { api, isGuest, isAdmin, username, logout } = useAuth()
+const { api, isGuest, isAdmin, username } = useAuth()
 const toast = useToast()
 const { confirmDialog, showConfirm, closeConfirm } = useConfirm()
 
@@ -37,13 +37,6 @@ const students = ref<Student[]>([])
 const isLoading = ref(true)
 
 // 处理退出登录
-function handleLogout() {
-  currentClass.value = null
-  students.value = []
-  localStorage.removeItem('pet-garden-current-class')
-  logout()
-  loadClasses()
-}
 
 const allTags = ref<Tag[]>([])
 const studentTags = ref<Map<string, Tag[]>>(new Map())
@@ -346,7 +339,7 @@ onActivated(() => {
       :username="username"
       :batch-mode="false"
       @login="router.push('/')"
-      @logout="handleLogout()"
+      
     />
 
     <main class="flex-1 p-6">
