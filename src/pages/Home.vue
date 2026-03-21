@@ -22,8 +22,6 @@ import DetailPanel from '@/components/DetailPanel.vue'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import AuthModal from '@/components/AuthModal.vue'
 import PageLayout from '@/components/layout/PageLayout.vue'
-import StudentModal from '@/components/modals/StudentModal.vue'
-import ImportModal from '@/components/modals/ImportModal.vue'
 import EvaluationModal from '@/components/modals/EvaluationModal.vue'
 import PetModal from '@/components/modals/PetModal.vue'
 import PetStatusModal from '@/components/PetStatusModal.vue'
@@ -37,7 +35,7 @@ const { triggerAnimation: triggerPetStatusAnimation } = usePetStatusAnimation()
 
 // 使用全局状态
 const { classes, currentClass, loadClasses } = useClasses()
-const { students, loadStudents, addStudent: doAddStudent, importStudents: doImportStudents, changePet, batchEvaluate, addEvaluation } = useStudents()
+const { students, loadStudents, changePet, batchEvaluate, addEvaluation } = useStudents()
 const { allTags, loadTags, getStudentTags } = useTags()
 const { showLoginModal, closeLoginModal } = useLoginModal()
 
@@ -54,8 +52,6 @@ const sortOrder = ref<'asc' | 'desc'>('asc')
 const isLoaded = ref(false)
 
 // Modal states
-const showStudentModal = ref(false)
-const showImportModal = ref(false)
 const showEvalModal = ref(false)
 const showPetModal = ref(false)
 const showDetailPanel = ref(false)
@@ -121,41 +117,6 @@ async function loadRules() {
     rules.value = res.data.rules
   } catch (error) {
     console.error('加载规则失败:', error)
-  }
-}
-
-// 学生操作
-async function addStudent(name: string, studentNo: string) {
-  if (!name.trim() || !currentClass.value) return
-  try {
-    await doAddStudent(name.trim(), studentNo || null)
-    showStudentModal.value = false
-  } catch (error) {
-    toast.error('添加学生失败')
-  }
-}
-
-async function importStudents(text: string) {
-  if (!text.trim() || !currentClass.value) return
-  const lines = text.trim().split('\n')
-  const studentList = []
-  for (const line of lines) {
-    const trimmed = line.trim()
-    if (!trimmed) continue
-    const parts = trimmed.split(/[\t,，;；\s]+/)
-    if (parts.length >= 2) {
-      studentList.push({ name: parts[0], studentNo: parts.slice(1).join('') })
-    } else if (parts.length === 1) {
-      studentList.push({ name: parts[0], studentNo: '' })
-    }
-  }
-  if (studentList.length === 0) { toast.warning('没有识别到学生信息'); return }
-  try {
-    const res = await doImportStudents(studentList)
-    toast.success(`成功导入 ${res?.imported || studentList.length} 名学生`)
-    showImportModal.value = false
-  } catch (error) {
-    toast.error('导入失败')
   }
 }
 
@@ -419,10 +380,9 @@ onActivated(() => {
           <div class="text-8xl mb-6 animate-float">👨‍🎓</div>
           <h3 class="text-2xl font-bold text-gray-700 mb-3">还没有学生</h3>
           <p class="text-gray-500 mb-6 text-lg">添加学生，让他们领养可爱的宠物吧！</p>
-          <div class="flex gap-3">
-            <button @click="showStudentModal = true" class="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-6 py-3 rounded-2xl hover:shadow-lg hover:scale-105 transition-all font-bold">➕ 添加学生</button>
-            <button @click="showImportModal = true" class="bg-white text-gray-700 px-6 py-3 rounded-2xl hover:shadow-lg hover:scale-105 transition-all font-bold border border-gray-200">📥 批量导入</button>
-          </div>
+          <router-link to="/students" class="bg-gradient-to-r from-orange-400 to-pink-500 text-white px-6 py-3 rounded-2xl hover:shadow-lg hover:scale-105 transition-all font-bold">
+            👉 去学生管理
+          </router-link>
         </div>
 
         <!-- 学生列表 -->
@@ -448,8 +408,6 @@ onActivated(() => {
     </div>
 
     <!-- Modals -->
-    <StudentModal :show="showStudentModal" @close="showStudentModal = false" @submit="addStudent" />
-    <ImportModal :show="showImportModal" @close="showImportModal = false" @submit="importStudents" />
     <EvaluationModal :show="showEvalModal" :selected-count="selectedStudents.size" :rules="rules" @close="showEvalModal = false" @evaluate="handleEvaluate" />
     <PetModal :show="showPetModal" :student="selectedStudent" @close="showPetModal = false; selectedStudent = null" @select="selectPet" />
     <DetailPanel :show="showDetailPanel" :student="detailStudent" :rules="rules" :student-records="studentRecords" @close="closeDetailPanel" @change-pet="showDetailPanel = false; selectedStudent = detailStudent; showPetModal = true" @evaluate="handleDetailEvaluate" />
