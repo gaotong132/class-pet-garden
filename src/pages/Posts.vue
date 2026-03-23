@@ -258,7 +258,7 @@ const canPost = computed(() => user.value && !isGuest.value)
     <div class="max-w-3xl mx-auto w-full">
       <!-- 头部 -->
       <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">💬 留言板</h1>
+        <h1 class="text-2xl font-bold text-gray-800">💬 公共留言板</h1>
         <button 
           @click="openCreateModal"
           :disabled="!canPost"
@@ -345,6 +345,9 @@ const canPost = computed(() => user.value && !isGuest.value)
           <h3 class="text-xl font-bold text-white">✏️ 发帖</h3>
         </div>
         <div class="p-6 space-y-4">
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3">
+            <p class="text-sm text-amber-700">📢 帖子所有人可见，请注意保护个人信息，不要在内容中透露敏感信息。</p>
+          </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">标题</label>
             <input 
