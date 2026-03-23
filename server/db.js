@@ -96,6 +96,40 @@ export function initDb() {
       FOREIGN KEY (student_id) REFERENCES students(id),
       FOREIGN KEY (tag_id) REFERENCES student_tags(id)
     );
+
+    -- 留言板帖子表
+    CREATE TABLE IF NOT EXISTS posts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at INTEGER,
+      updated_at INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    -- 帖子评论表
+    CREATE TABLE IF NOT EXISTS post_comments (
+      id TEXT PRIMARY KEY,
+      post_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at INTEGER,
+      FOREIGN KEY (post_id) REFERENCES posts(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    -- 帖子投票表（点赞/点踩）
+    CREATE TABLE IF NOT EXISTS post_votes (
+      id TEXT PRIMARY KEY,
+      post_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      vote_type INTEGER NOT NULL,  -- 1=赞, -1=踩
+      created_at INTEGER,
+      FOREIGN KEY (post_id) REFERENCES posts(id),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      UNIQUE(post_id, user_id)  -- 每个用户对每个帖子只能投一次
+    );
   `)
 
   // 迁移：添加 pet_status 字段（如果不存在）

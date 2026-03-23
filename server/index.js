@@ -16,6 +16,7 @@ import backupRoutes from './routes/backup.js'
 import settingsRoutes from './routes/settings.js'
 import tagRoutes from './routes/tags.js'
 import adminRoutes from './routes/admin.js'
+import postsRoutes from './routes/posts.js'
 
 const app = express()
 const PORT = 3002
@@ -79,6 +80,7 @@ app.use('/api/backup', backupRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/tags', tagRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/posts', postsRoutes)
 
 // 健康检查（公开）
 app.get('/api/health', (req, res) => {
