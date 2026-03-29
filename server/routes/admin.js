@@ -13,12 +13,12 @@ function adminMiddleware(req, res, next) {
   next()
 }
 
-// 获取所有老师及其班级统计
+// 获取所有老师及其班级统计（不包括管理员）
 router.get('/teachers', authMiddleware, adminMiddleware, (req, res) => {
   const teachers = db.prepare(`
     SELECT id, username, created_at, is_admin
     FROM users
-    WHERE is_guest = 0
+    WHERE is_guest = 0 AND is_admin = 0
     ORDER BY created_at DESC
   `).all()
 
@@ -35,6 +35,13 @@ router.get('/teachers', authMiddleware, adminMiddleware, (req, res) => {
     const totalStudents = classes.reduce((sum, c) => sum + c.student_count, 0)
     const totalEvals = classes.reduce((sum, c) => sum + c.eval_count, 0)
 
+    // 获取该老师最近一次评价时间
+    const lastEval = db.prepare(`
+      SELECT MAX(timestamp) as last_time
+      FROM evaluation_records
+      WHERE user_id = ?
+    `).get(teacher.id)
+
     return {
       id: teacher.id,
       username: teacher.username,
@@ -43,8 +50,17 @@ router.get('/teachers', authMiddleware, adminMiddleware, (req, res) => {
       classCount: classes.length,
       totalStudents,
       totalEvals,
+      lastEvalTime: lastEval?.last_time || null,
       classes
     }
+  })
+
+  // 按最后一次评价时间排序，没评价过的（null）排在最前面，然后时间早的排前面
+  result.sort((a, b) => {
+    if (a.lastEvalTime === null && b.lastEvalTime === null) return 0
+    if (a.lastEvalTime === null) return -1
+    if (b.lastEvalTime === null) return 1
+    return a.lastEvalTime - b.lastEvalTime
   })
 
   res.json({ teachers: result })

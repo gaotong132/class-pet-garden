@@ -10,7 +10,7 @@ const toast = useToast()
 const router = useRouter()
 
 interface TeacherClass { id: string; name: string; student_count: number; eval_count: number }
-interface Teacher { id: string; username: string; isAdmin: boolean; createdAt: number; classCount: number; totalStudents: number; totalEvals: number; classes: TeacherClass[] }
+interface Teacher { id: string; username: string; isAdmin: boolean; createdAt: number; classCount: number; totalStudents: number; totalEvals: number; lastEvalTime: number | null; classes: TeacherClass[] }
 interface Stats { teachers: number; classes: number; students: number; evaluations: number; todayEvaluations: number }
 interface DailyStat { date: string; newUsers: number; newClasses: number; newStudents: number; evaluations: number }
 
@@ -25,6 +25,10 @@ const activeTab = ref<'teachers' | 'stats'>('teachers')
 const showDeleteConfirm = ref(false)
 const teacherToDelete = ref<Teacher | null>(null)
 const isDeleting = ref(false)
+const deleteConfirmInput = ref('')
+
+// 判断输入的用户名是否匹配
+const canConfirmDelete = computed(() => deleteConfirmInput.value === teacherToDelete.value?.username)
 
 onMounted(async () => {
   if (isGuest.value || !isAdmin.value) { toast.error('需要管理员权限'); router.push('/'); return }
@@ -62,6 +66,20 @@ async function loadDailyStats() {
 function toggleTeacher(id: string) { expandedTeacher.value = expandedTeacher.value === id ? null : id }
 function formatDate(timestamp: number) { return new Date(timestamp).toLocaleDateString('zh-CN') }
 function formatShortDate(date: string) { return date.slice(5) }
+
+// 判断是否超过15天没有评价（综合考虑注册时间）
+function isInactive(teacher: Teacher): boolean {
+  const fifteenDaysMs = 15 * 24 * 60 * 60 * 1000
+  const now = Date.now()
+  
+  if (teacher.lastEvalTime) {
+    // 有评价记录，判断最后一次评价是否超过15天
+    return now - teacher.lastEvalTime > fifteenDaysMs
+  } else {
+    // 从未评价，判断注册时间是否超过15天
+    return now - teacher.createdAt > fifteenDaysMs
+  }
+}
 
 const totalStudents = computed(() => teachers.value.reduce((sum, t) => sum + t.totalStudents, 0))
 const totalEvals = computed(() => teachers.value.reduce((sum, t) => sum + t.totalEvals, 0))
@@ -108,12 +126,14 @@ function generateAreaPath(data: number[], max: number): string {
 // 删除相关
 function confirmDelete(teacher: Teacher) {
   teacherToDelete.value = teacher
+  deleteConfirmInput.value = ''
   showDeleteConfirm.value = true
 }
 
 function cancelDelete() {
   showDeleteConfirm.value = false
   teacherToDelete.value = null
+  deleteConfirmInput.value = ''
 }
 
 async function executeDelete() {
@@ -188,7 +208,7 @@ async function executeDelete() {
         <div v-if="activeTab === 'teachers'">
           <div v-if="teachers.length === 0" class="p-8 text-center text-gray-400">暂无老师数据</div>
           <div v-else class="divide-y divide-gray-100">
-            <div v-for="teacher in teachers" :key="teacher.id" class="hover:bg-gray-50">
+            <div v-for="teacher in teachers" :key="teacher.id" class="hover:bg-gray-50" :class="isInactive(teacher) && !teacher.isAdmin ? 'bg-red-50/30' : ''">
               <div class="p-4 flex items-center justify-between cursor-pointer" @click="toggleTeacher(teacher.id)">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full bg-gradient-to-r from-orange-400 to-pink-500 flex items-center justify-center text-white font-bold">
@@ -198,24 +218,30 @@ async function executeDelete() {
                     <div class="font-medium text-gray-800 flex items-center gap-2">
                       {{ teacher.username }}
                       <span v-if="teacher.isAdmin" class="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">管理员</span>
+                      <span v-if="isInactive(teacher) && !teacher.isAdmin" class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">⚠️ 不活跃</span>
+                      <button 
+                        v-if="!teacher.isAdmin"
+                        @click.stop="confirmDelete(teacher)"
+                        class="ml-1 px-2 py-0.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="删除用户"
+                      >
+                        删除
+                      </button>
                     </div>
-                    <div class="text-sm text-gray-500">注册于 {{ formatDate(teacher.createdAt) }}</div>
+                    <div class="text-sm flex items-center gap-2 text-gray-500">
+                      注册于 {{ formatDate(teacher.createdAt) }}
+                      <span class="text-gray-400">|</span>
+                      <span :class="isInactive(teacher) ? 'text-red-500 font-medium' : 'text-gray-500'">
+                        {{ teacher.lastEvalTime ? '最后评价于 ' + formatDate(teacher.lastEvalTime) : '从未评价' }}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <div class="flex items-center gap-4 text-sm">
                   <div class="text-center"><div class="font-bold text-blue-500">{{ teacher.classCount }}</div><div class="text-gray-400">班级</div></div>
                   <div class="text-center"><div class="font-bold text-green-500">{{ teacher.totalStudents }}</div><div class="text-gray-400">学生</div></div>
                   <div class="text-center"><div class="font-bold text-purple-500">{{ teacher.totalEvals }}</div><div class="text-gray-400">评价</div></div>
-                  <!-- 删除按钮 -->
-                  <button 
-                    v-if="!teacher.isAdmin"
-                    @click.stop="confirmDelete(teacher)"
-                    class="px-2 py-1 text-red-500 hover:bg-red-50 rounded transition-colors"
-                    title="删除用户"
-                  >
-                    🗑️
-                  </button>
-                  <div class="text-gray-400">
+                  <div class="text-gray-400 pl-2">
                     <span class="inline-block transition-transform duration-200" :class="expandedTeacher === teacher.id ? 'rotate-180' : ''">▼</span>
                   </div>
                 </div>
@@ -365,7 +391,7 @@ async function executeDelete() {
           <p class="text-gray-700 mb-4">
             确定要删除用户 <span class="font-bold text-red-600">{{ teacherToDelete?.username }}</span> 吗？
           </p>
-          <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
             <p class="text-sm text-red-700 font-medium mb-2">此操作将同时删除：</p>
             <ul class="text-sm text-red-600 space-y-1">
               <li>• {{ teacherToDelete?.classCount || 0 }} 个班级</li>
@@ -373,6 +399,22 @@ async function executeDelete() {
               <li>• {{ teacherToDelete?.totalEvals || 0 }} 条评价记录</li>
             </ul>
             <p class="text-sm text-red-700 mt-3 font-medium">⚠️ 此操作不可恢复！</p>
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              请输入用户名 <span class="text-red-600 font-bold">{{ teacherToDelete?.username }}</span> 以确认删除：
+            </label>
+            <input 
+              type="text"
+              v-model="deleteConfirmInput"
+              class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+              :class="deleteConfirmInput && !canConfirmDelete ? 'border-red-300 bg-red-50' : 'border-gray-300'"
+              placeholder="输入用户名确认"
+              @keydown.enter="canConfirmDelete && executeDelete()"
+            />
+            <p v-if="deleteConfirmInput && !canConfirmDelete" class="text-sm text-red-500 mt-1">
+              用户名不匹配
+            </p>
           </div>
           <div class="flex gap-3">
             <button 
@@ -384,8 +426,8 @@ async function executeDelete() {
             </button>
             <button 
               @click="executeDelete"
-              :disabled="isDeleting"
-              class="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              :disabled="isDeleting || !canConfirmDelete"
+              class="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span v-if="isDeleting" class="animate-spin">⏳</span>
               <span v-else>确认删除</span>
