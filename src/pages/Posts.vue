@@ -371,11 +371,11 @@ const canPost = computed(() => user.value && !isGuest.value)
               v-model="newContent"
               placeholder="写下你的建议或想法..."
               rows="3"
-              maxlength="200"
+              maxlength="300"
               class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
             ></textarea>
-            <div class="text-right text-xs mt-1" :class="newContent.length > 200 ? 'text-red-500' : 'text-gray-400'">
-              {{ newContent.length }}/200
+            <div class="text-right text-xs mt-1" :class="newContent.length > 300 ? 'text-red-500' : 'text-gray-400'">
+              {{ newContent.length }}/300
             </div>
           </div>
           <div class="flex gap-3">
@@ -495,17 +495,17 @@ const canPost = computed(() => user.value && !isGuest.value)
                       v-model="newComment"
                       type="text"
                       placeholder="写下你的评论..."
-                      maxlength="200"
+                      maxlength="300"
                       class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       @keyup.enter="addComment"
                     />
-                    <div class="text-right text-xs mt-1" :class="newComment.length > 200 ? 'text-red-500' : 'text-gray-400'">
-                      {{ newComment.length }}/200
+                    <div class="text-right text-xs mt-1" :class="newComment.length > 300 ? 'text-red-500' : 'text-gray-400'">
+                      {{ newComment.length }}/300
                     </div>
                   </div>
                   <button 
                     @click="addComment"
-                    :disabled="isSubmitting || !newComment.trim() || newComment.length > 200"
+                    :disabled="isSubmitting || !newComment.trim() || newComment.length > 300"
                     class="px-4 py-2 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 self-start"
                   >
                     发送
